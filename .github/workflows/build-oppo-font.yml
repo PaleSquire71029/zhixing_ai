@@ -40,6 +40,12 @@ jobs:
           curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
             "https://raw.githubusercontent.com/PaleSquire71029/calculator/main/assets/fonts/oppo-sans-4.0.ttf" \
             -o /tmp/oppo-sans-4.0.ttf
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
+            "https://raw.githubusercontent.com/PaleSquire71029/calculator/main/fonts/NotoSansSC-400.woff2" \
+            -o assets/fonts/NotoSansSC-400.woff2
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
+            "https://raw.githubusercontent.com/PaleSquire71029/calculator/main/fonts/NotoSansSC-700.woff2" \
+            -o assets/fonts/NotoSansSC-700.woff2
           python - <<'PY'
           from pathlib import Path
           page = Path("ai-admin.html").read_text(encoding="utf-8")
@@ -58,7 +64,7 @@ jobs:
             --desubroutinize \
             --name-IDs='*' \
             --name-languages='*'
-          ls -lh /tmp/oppo-sans-4.0.ttf assets/fonts/oppo-sans-admin.woff2
+          ls -lh /tmp/oppo-sans-4.0.ttf assets/fonts/oppo-sans-admin.woff2 assets/fonts/NotoSansSC-400.woff2 assets/fonts/NotoSansSC-700.woff2
 
       - name: Commit subset if changed
         shell: bash
