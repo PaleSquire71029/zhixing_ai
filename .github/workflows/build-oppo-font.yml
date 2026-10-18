@@ -1,0 +1,75 @@
+name: Build OPPO Sans admin subset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ai-admin.html"
+      - ".github/workflows/build-oppo-font.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zhixing-ai-oppo-font
+  cancel-in-progress: false
+
+jobs:
+  subset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install subset tools
+        run: python -m pip install --disable-pip-version-check fonttools brotli
+
+      - name: Download upstream OPPO Sans and subset this admin UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/fonts
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 2 \
+            "https://raw.githubusercontent.com/PaleSquire71029/calculator/main/assets/fonts/oppo-sans-4.0.ttf" \
+            -o /tmp/oppo-sans-4.0.ttf
+          python - <<'PY'
+          from pathlib import Path
+          page = Path("ai-admin.html").read_text(encoding="utf-8")
+          # Include all characters used in the admin HTML/CSS/JS. Missing dynamic characters
+          # safely fall back to Noto/system fonts rather than blocking the interface.
+          chars = "".join(sorted(set(page)))
+          Path("/tmp/zhixing-ai-admin-chars.txt").write_text(chars, encoding="utf-8")
+          print(f"Collected {len(chars)} distinct source characters for the admin font.")
+          PY
+          pyftsubset /tmp/oppo-sans-4.0.ttf \
+            --text-file=/tmp/zhixing-ai-admin-chars.txt \
+            --output-file=assets/fonts/oppo-sans-admin.woff2 \
+            --flavor=woff2 \
+            --layout-features='*' \
+            --no-hinting \
+            --desubroutinize \
+            --name-IDs='*' \
+            --name-languages='*'
+          ls -lh /tmp/oppo-sans-4.0.ttf assets/fonts/oppo-sans-admin.woff2
+
+      - name: Commit subset if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/fonts/oppo-sans-admin.woff2
+          if git diff --cached --quiet; then
+            echo "Font subset is already up to date."
+            exit 0
+          fi
+          git commit -m "Add optimized OPPO Sans admin webfont"
+          git push origin HEAD:main
