@@ -310,6 +310,7 @@ table{min-width:0}
             <div class="help-item"><span class="step">3</span><div><strong>密钥处理</strong><p>自定义 API Key 加密保存且不会回显；“改用 Worker Secret”会切回后端的 <span class="code">AI_API_KEY</span>。</p></div></div>
             <div class="help-item"><span class="step">4</span><div><strong>导出 / 导入配置</strong><p>备份不包含 API Key，但会包含提示词。</p></div></div>
             <div class="help-item"><span class="step">5</span><div><strong>安全边界</strong><p>提问和图片会发送到所选模型服务商。发现异常用量时请轮换 API Key。</p></div></div>
+            <div class="help-item"><span class="step">6</span><div><strong>独立密钥（推荐）</strong><p>在 Worker Secrets 中分别设置随机的 ADMIN_SESSION_SECRET 与 ADMIN_ENCRYPTION_KEY，建议各至少 32 个随机字符并妥善保管。添加后重新打开本页一次，让旧的自定义 API Key 自动迁移加密，再轮换管理密码；不要把这些密钥写入仓库。</p></div></div>
           </div>
           <div class="section-card" style="margin-top:16px">
             <div class="subhead" style="margin-top:0">配置文件与维护</div>
