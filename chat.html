@@ -162,7 +162,7 @@ function renderMarkdown(text){
   return '\n'+id+'\n';
  });
  src=src.replace(/\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\\begin\{([a-zA-Z*]+)\}[\s\S]+?\\end\{\1\}|\$(?!\$)(?:\\.|[^$\n])+\$(?!\$)/g,formula=>{
-  const id=mathToken+mathBlocks.length+'END';mathBlocks.push(formula);return id;
+  const id=mathToken+mathBlocks.length+'END';mathBlocks.push(formula.replace(/&amp;/g,'&'));return id;
  });
  const lines=src.split('\n');
  let html='',para=[],listType='',list=[];
