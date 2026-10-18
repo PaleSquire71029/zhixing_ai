@@ -199,7 +199,14 @@ function typesetChatMath(node){
 }
 function messageRenderSignature(m){
  const raw=typeof m.content==='string'?m.content:contentText(m.content);
- return [m.role||'',raw.length,raw.slice(0,48),raw.slice(-48),m.pending?1:0,m.error?1:0,(m.filesText||'').length].join('|');
+ const imageKey=Array.isArray(m.content)?m.content.map(part=>{
+  if(part&&part.type==='image_url'){
+   const url=String(part.image_url&&part.image_url.url||''),mid=Math.floor(url.length/2);
+   return 'img:'+url.length+':'+url.slice(0,24)+':'+url.slice(mid,mid+24)+':'+url.slice(-24);
+  }
+  return part&&part.type==='text'?'txt:'+String(part.text||''):'other';
+ }).join('|'):'';
+ return [m.ts||'',m.role||'',raw.length,raw.slice(0,48),raw.slice(-48),imageKey,m.pending?1:0,m.error?1:0,(m.filesText||'').length].join('|');
 }
 function renderMessages(){
  if(renderQueued)return;renderQueued=true;
@@ -208,7 +215,7 @@ function renderMessages(){
   const host=$('messageList'),c=currentConversation(),messages=c?c.messages:[];
   const old=new Map(Array.from(host.children).filter(n=>n.dataset.messageId).map(n=>[n.dataset.messageId,n]));
   messages.forEach((m,index)=>{
-   const key=String(m.id||('message-'+index)),signature=messageRenderSignature(m);
+   const key=String(m.id||((c&&c.id||'conversation')+'-message-'+index)),signature=messageRenderSignature(m);
    let node=old.get(key),shouldTypeset=false;
    if(node&&node.dataset.renderSignature===signature){
     old.delete(key);
