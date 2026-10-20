@@ -10,6 +10,7 @@ on:
   pull_request:
     paths:
       - "ai-admin.html"
+      - "assets/admin-console.js"
       - ".github/workflows/admin-security-audit.yml"
   workflow_dispatch:
 
@@ -26,6 +27,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Check admin JavaScript syntax
+        run: node --check assets/admin-console.js
       - name: Verify CSP and secret-handling invariants
         run: |
           node --input-type=module <<'NODE'
