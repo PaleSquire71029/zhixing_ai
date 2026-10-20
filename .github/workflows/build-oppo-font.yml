@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "ai-admin.html"
+      - "assets/admin-console.js"
       - ".github/workflows/build-oppo-font.yml"
   workflow_dispatch:
 
@@ -49,9 +50,9 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           page = Path("ai-admin.html").read_text(encoding="utf-8")
-          # Include all characters used in the admin HTML/CSS/JS. Missing dynamic characters
-          # safely fall back to Noto/system fonts rather than blocking the interface.
-          chars = "".join(sorted(set(page)))
+          script = Path("assets/admin-console.js").read_text(encoding="utf-8")
+          # The admin UI renders many labels from a separate script, so subset both files.
+          chars = "".join(sorted(set(page + script)))
           Path("/tmp/zhixing-ai-admin-chars.txt").write_text(chars, encoding="utf-8")
           print(f"Collected {len(chars)} distinct source characters for the admin font.")
           PY
