@@ -14,7 +14,21 @@ async function api(app,path,opt){opt=opt||{};var headers=new Headers(opt.headers
 async function health(app){try{return {ok:true,data:await api(app,"/health",{noAuth:true,timeout:10000})}}catch(e){return {ok:false,error:e.message}}}
 function headerState(){var n=APPS.filter(function(a){return !!tokens[a.id]}).length,e=$("headerState");e.textContent=n===2?"双产品已登录":n===1?"部分产品已登录":"未登录";e.className="status-chip "+(n===2?"good":n===1?"warn":"");$("logoutTop").hidden=!n}
 function logoutAll(){APPS.forEach(function(a){setToken(a.id,"")});cache={"zhixing-ai":null,"learning":null};$("password").value="";$("app").hidden=true;$("login").hidden=false;note("loginNotice","已退出所有产品。","ok");headerState()}
-async function login(ev){ev.preventDefault();var pass=$("password").value,btn=$("loginBtn");busy(btn,true,"正在验证…");note("loginNotice","");var result=await Promise.all(APPS.map(async function(a){try{var d=await api(a.id,"/admin/login",{method:"POST",noAuth:true,timeout:12000,body:{password:pass}});if(!d.token)throw new Error("Worker 没有返回有效会话");setToken(a.id,d.token);return {id:a.id,ok:true}}catch(e){setToken(a.id,"");return {id:a.id,ok:false,error:e.message}}}));$("password").value="";headerState();var good=result.filter(function(x){return x.ok});if(!good.length){busy(btn,false);note("loginNotice",result.map(function(x){return appName(x.id)+"："+x.error}).join("\n"),"bad");return}$("login").hidden=true;$("app").hidden=false;await Promise.all(APPS.map(function(a){return loadScope(a.id)}));activateApp(good[0].id);activateView("overview");var failed=result.filter(function(x){return !x.ok});toast(failed.length?"仅部分产品登录成功":"双产品登录成功");busy(btn,false)}
+async function login(ev){
+ ev.preventDefault();var password=$("password").value,btn=$("loginBtn");busy(btn,true,"正在验证…");note("loginNotice","");
+ try{
+  var result=await api("learning","/admin/login/all",{method:"POST",noAuth:true,timeout:12000,body:{password:password}});
+  if(!result.tokens||!result.tokens["zhixing-ai"]||!result.tokens.learning)throw new Error("后端没有返回两套产品的完整会话，未进入管理页。");
+  APPS.forEach(function(app){setToken(app.id,result.tokens[app.id])});
+  $("password").value="";headerState();$("login").hidden=true;$("app").hidden=false;
+  await Promise.all(APPS.map(function(app){return loadScope(app.id)}));
+  activateApp("zhixing-ai");activateView("overview");toast("双产品登录成功");
+ }catch(error){
+  APPS.forEach(function(app){setToken(app.id,"")});
+  $("password").value="";headerState();
+  note("loginNotice",error.message||"登录失败，请检查 Worker 配置。","bad");
+ }finally{busy(btn,false)}
+}
 function normalizePrompts(s,d){var p=s&&s.prompts||{};d=d||{};return {chat:Object.assign({},d.chat||{},p.chat||{}),analysisBase:typeof p.analysisBase==="string"?p.analysisBase:d.analysisBase||"",analysisModes:Object.assign({},d.analysisModes||{},p.analysisModes||{}),analysisActions:Object.assign({},d.analysisActions||{},p.analysisActions||{})}}
 async function loadScope(id){var st=cache[id]||{settings:null,defaults:null,health:null,models:[]};cache[id]=st;st.health=await health(id);if(!tokens[id]){renderAll();return}var pair=await Promise.allSettled([api(id,"/admin/settings"),api(id,"/admin/defaults")]);st.settingsError="";if(pair[0].status==="fulfilled")st.settings=pair[0].value;else st.settingsError=pair[0].reason.message;if(pair[1].status==="fulfilled")st.defaults=pair[1].value;else st.defaultsError=pair[1].reason.message;if(st.settings)st.settings.prompts=normalizePrompts(st.settings,st.defaults);renderAll()}
 function current(){return cache[activeApp]||{}}
