@@ -1,0 +1,55 @@
+name: Admin Security Audit
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "ai-admin.html"
+      - ".github/workflows/admin-security-audit.yml"
+  pull_request:
+    paths:
+      - "ai-admin.html"
+      - ".github/workflows/admin-security-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify CSP and secret-handling invariants
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
+          import { createHash } from "node:crypto";
+          import assert from "node:assert/strict";
+
+          const html = readFileSync("ai-admin.html", "utf8");
+          const match = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/i);
+          assert.ok(match, "The admin page must ship a CSP meta policy.");
+          const policy = match[1];
+          const scriptSrc = policy.split(";").map(part => part.trim()).find(part => part.startsWith("script-src "));
+          assert.ok(scriptSrc, "CSP must define script-src.");
+          assert.doesNotMatch(scriptSrc, /unsafe-inline|unsafe-eval/, "Executable inline scripts must be hash-authorized.");
+          assert.match(policy, /base-uri 'none'/);
+          assert.match(policy, /form-action 'none'/);
+          assert.match(policy, /object-src 'none'/);
+          assert.match(policy, /frame-src 'none'/);
+
+          const declared = [...scriptSrc.matchAll(/'sha256-([^']+)'/g)].map(item => item[1]).sort();
+          const actual = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+            .map(item => createHash("sha256").update(item[1]).digest("base64")).sort();
+          assert.deepEqual(declared, actual, "Every inline script must match a CSP hash; refresh CSP when scripts change.");
+          assert.match(html, /name="referrer" content="no-referrer"/i);
+          assert.match(html, /sessionStorage\.setItem\(TOKEN_KEY,\s*token\)/, "Admin tokens should remain tab-session scoped.");
+          assert.doesNotMatch(html, /localStorage\.setItem\([^)]*(?:TOKEN_KEY|token)/i, "Admin bearer tokens must not be persisted in localStorage.");
+          console.log("Admin CSP, inline script hashes, referrer policy, and session token storage checks passed.");
+          NODE
