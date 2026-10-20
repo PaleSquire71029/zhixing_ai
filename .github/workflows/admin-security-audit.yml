@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "ai-admin.html"
+      - "assets/admin-console.js"
       - ".github/workflows/admin-security-audit.yml"
   pull_request:
     paths:
@@ -45,11 +46,15 @@ jobs:
           assert.match(policy, /frame-src 'none'/);
 
           const declared = [...scriptSrc.matchAll(/'sha256-([^']+)'/g)].map(item => item[1]).sort();
-          const actual = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
-            .map(item => createHash("sha256").update(item[1]).digest("base64")).sort();
+          const actual = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)]
+            .filter(item => !/\bsrc\s*=/i.test(item[1]))
+            .map(item => createHash("sha256").update(item[2]).digest("base64")).sort();
           assert.deepEqual(declared, actual, "Every inline script must match a CSP hash; refresh CSP when scripts change.");
           assert.match(html, /name="referrer" content="no-referrer"/i);
-          assert.match(html, /sessionStorage\.setItem\(TOKEN_KEY,\s*token\)/, "Admin tokens should remain tab-session scoped.");
-          assert.doesNotMatch(html, /localStorage\.setItem\([^)]*(?:TOKEN_KEY|token)/i, "Admin bearer tokens must not be persisted in localStorage.");
+          let adminLogic = "";
+          try { adminLogic = readFileSync("assets/admin-console.js", "utf8"); } catch {}
+          const securitySource = html + "\n" + adminLogic;
+          assert.match(securitySource, /sessionStorage\.setItem\(\s*TOKEN_KEY(?:\s*\+\s*(?:app|app\.id))?\s*,\s*token\s*\)/, "Admin tokens should be session-scoped, including per-product sessions.");
+          assert.doesNotMatch(securitySource, /localStorage\.setItem\([^)]*(?:TOKEN_KEY|token)/i, "Admin bearer tokens must not be persisted in localStorage.");
           console.log("Admin CSP, inline script hashes, referrer policy, and session token storage checks passed.");
           NODE
