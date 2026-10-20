@@ -1,7 +1,7 @@
 (function(){
 "use strict";
 if(window.top!==window.self){try{window.top.location=window.location.href}catch(e){document.documentElement.textContent="";return}}
-var $=function(id){return document.getElementById(id)},WORKER="https://zhixing-calculator-ai.xiaoshirong2023.workers.dev",TOKEN_KEY="zx-ai-admin-token-";
+var $=function(id){return document.getElementById(id)},WORKER="https://api.zhixing.us.ci",TOKEN_KEY="zx-ai-admin-token-";
 var APPS=[{id:"zhixing-ai",name:"知行AI"},{id:"learning",name:"学习产品"}],cache={"zhixing-ai":null,"learning":null},tokens={"zhixing-ai":"","learning":""},activeApp="zhixing-ai",activeView="overview",page=1,pageSize=25,expanded={},toastTimer=0;
 APPS.forEach(function(app){try{tokens[app.id]=sessionStorage.getItem(TOKEN_KEY+app.id)||""}catch(e){}});
 function setToken(app,token){tokens[app]=token;try{if(token)sessionStorage.setItem(TOKEN_KEY+app,token);else sessionStorage.removeItem(TOKEN_KEY+app)}catch(e){}}
