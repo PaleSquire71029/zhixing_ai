@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="description" content="知行AI：轻盈、专注、可自由选择模型的 AI 对话工作台，支持 Worker 统一接入和自带 API Key。">
 <link rel="canonical" href="https://ai.zhixing.us.ci/chat.html">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'unsafe-inline'; font-src data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src data: blob:; connect-src https://zhixing-calculator-ai.xiaoshirong2023.workers.dev https://api.deepseek.com https://api.xiaomimimo.com https://token-plan-cn.xiaomimimo.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'unsafe-inline'; font-src data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src data: blob:; connect-src https://api.zhixing.us.ci https://api.deepseek.com https://api.xiaomimimo.com https://token-plan-cn.xiaomimimo.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
 <meta name="referrer" content="no-referrer">
 <script>
 window.MathJax = {
@@ -111,7 +111,7 @@ window.MathJax = {
 <script>
 (function(){
 'use strict';
-const WORKER='https://zhixing-calculator-ai.xiaoshirong2023.workers.dev';
+const WORKER='https://api.zhixing.us.ci';
 const APP_ID='zhixing-ai';
 const PROVIDERS={
  deepseek:{name:'DeepSeek 官方',base:'https://api.deepseek.com',models:['deepseek-flash','deepseek-v4-pro'],vision:false,web:false},
