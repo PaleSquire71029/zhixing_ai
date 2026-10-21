@@ -50,6 +50,15 @@ jobs:
           assert.match(html, /data-view="cloud"/, "Cloud data must be part of the unified menu.");
           assert.match(html, /id="cloudPane-accounts"/, "Account management must be in the unified UI.");
           assert.match(html, /id="cloudCreateAccountForm"/, "Admin account registration form must exist.");
+          assert.match(html, /id="modelPicker"/, "Model selection must use a native select control.");
+          assert.doesNotMatch(html, /datalist id="modelOptions"/, "Avoid unreliable mobile datalist selection.");
+          assert.match(js, /modelPicker.*addEventListener\("change"/, "Model dropdown must synchronize the selected model.");
+          assert.match(js, /function renderModelPicker\(/, "Model list must populate the native selector.");
+          assert.match(js, /data-cloud-account-delete=/, "Account list must expose the guarded unregister action.");
+          assert.match(js, /data-cloud-account-chats=/, "Account list must expose cross-product chat history.");
+          assert.match(js, /\/admin\/cloud\/accounts\/delete/, "Account deletion must use the protected Worker endpoint.");
+          assert.match(js, /DELETE_ACCOUNT/, "Account deletion must use an explicit confirmation.");
+          assert.match(html, /<option value="all">全部产品<\/option>/, "Conversation filter must support both products.");
           assert.match(js, /result\.tokens\.cloud/, "Unified login must receive its scoped cloud token.");
           assert.match(js, /\/admin\/cloud\/accounts/, "Account operations must use the protected Worker endpoint.");
           assert.match(js, /emailOwnershipConfirmed/, "Account creation must require mailbox ownership confirmation.");
