@@ -220,9 +220,17 @@ function renderMessages(){
    if(node&&node.dataset.renderSignature===signature){
     old.delete(key);
    }else{
-    const wrap=document.createElement('div');wrap.innerHTML=renderMessage(m);node=wrap.firstElementChild;
+    const previousNode=node;
+    const wrap=document.createElement('div');wrap.innerHTML=renderMessage(m);
+    node=wrap.firstElementChild;
     if(!node)return;
     node.dataset.messageId=key;node.dataset.renderSignature=signature;
+    // Replace the previous DOM node when a message changes; otherwise the
+    // stale copy remains in the list (including an old "正在思考" placeholder).
+    if(previousNode){
+     if(window.MathJax&&window.MathJax.typesetClear){try{window.MathJax.typesetClear([previousNode])}catch(e){}}
+     previousNode.remove();
+    }
     old.delete(key);shouldTypeset=!m.pending&&!m.error;
    }
    host.appendChild(node);
