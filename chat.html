@@ -69,6 +69,29 @@ window.MathJax = {
 .message-body mjx-container{max-width:100%;overflow-x:auto;overflow-y:hidden}
 .message-body mjx-container[display="true"]{display:block;max-width:100%;margin:.7em 0;text-align:left}
 </style>
+<style id="zx-mobile-cloud-history-fix">
+/* Cloud account fields are a real vertical grid; focus rings no longer collide with buttons. */
+#cloudAuthForm{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;min-width:0}
+.cloud-account input{display:block;position:relative;width:100%;min-width:0;min-height:45px;height:auto;margin:0;padding:11px 12px;line-height:1.4;border-width:1px;outline-offset:0}
+.cloud-account input:focus-visible{outline:none;border-color:rgba(112,214,237,.7);box-shadow:0 0 0 2px rgba(112,214,237,.2);z-index:1}
+.cloud-account-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:8px;width:100%;min-width:0}
+.cloud-account-actions button{display:flex;align-items:center;justify-content:center;min-width:0;min-height:42px;padding:9px 8px;white-space:normal;line-height:1.35;font-size:12px}
+.cloud-account-body{min-width:0;gap:9px}
+.cloud-account [hidden]{display:none!important}
+.history-cloud-label{flex:none;display:inline-flex;align-items:center;justify-content:center;padding:2px 5px;border:1px solid rgba(112,214,237,.18);border-radius:5px;color:#8dd8e8;font-size:9px;line-height:1.35;letter-spacing:0}
+.history-item .history-title{min-width:0}
+.sidebar{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(145,160,182,.22) transparent}
+.sidebar>.sidebar-bottom{flex:none;width:100%;min-width:0}
+.sidebar>.history{min-height:60px;min-width:0;overflow-y:auto}
+@media(max-width:680px){
+  .sidebar{width:min(86vw,340px);max-width:340px;max-height:100dvh;padding-bottom:max(13px,env(safe-area-inset-bottom));}
+  .sidebar>.sidebar-bottom{margin-top:14px;padding-bottom:2px}
+  .cloud-account{min-width:0}
+  .cloud-account-body{gap:9px}
+  .cloud-account-actions button{min-height:44px}
+  #cloudAccountStatus{overflow-wrap:anywhere}
+}
+</style>
 </head><body>
 <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
 <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"/></symbol>
@@ -89,16 +112,15 @@ window.MathJax = {
 <aside class="sidebar" id="sidebar">
  <a href="/" class="brand" aria-label="返回知行AI导航首页" title="返回知行AI导航首页"><div class="brand-mark"><svg><use href="#i-spark"/></svg></div><div><div class="brand-name">知行AI</div><div class="brand-sub">THINK · CREATE · GROW</div></div></a>
  <button class="primary-btn new-chat" id="newChatBtn"><svg><use href="#i-plus"/></svg>开启新对话</button>
- <div class="search-wrap"><svg><use href="#i-search"/></svg><input id="conversationSearch" type="search" placeholder="搜索对话" autocomplete="off" aria-label="搜索对话"></div>
+ <div class="search-wrap"><svg><use href="#i-search"/></svg><input id="conversationSearch" type="search" name="conversation-search" placeholder="搜索对话" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="搜索对话"></div>
  <div class="side-section"><span>最近对话</span><span id="historyCount">0</span></div><div class="history" id="history"></div>
  <div class="sidebar-bottom">
  <details class="cloud-account"><summary>账号与云端历史</summary><div class="cloud-account-body">
   <div id="cloudAccountStatus" aria-live="polite">登录后可同步知行AI文字对话。</div>
-  <div id="cloudAuthForm"><input id="cloudEmail" type="email" autocomplete="email" placeholder="邮箱" aria-label="邮箱"><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）" aria-label="密码">
+  <div id="cloudAuthForm" autocomplete="on"><input id="cloudEmail" name="email" type="email" autocomplete="email" placeholder="邮箱" aria-label="邮箱"><input id="cloudPassword" name="password" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）" aria-label="密码">
    <div class="cloud-account-actions"><button id="cloudLogin" type="button">登录</button><button id="cloudRegister" type="button">注册</button></div>
   </div>
   <div id="cloudSignedIn" hidden><div id="cloudEmailLabel" style="font-size:11px;color:var(--muted);overflow-wrap:anywhere"></div><div class="cloud-account-actions"><button id="cloudRefresh" type="button">刷新历史</button><button id="cloudLogout" type="button">退出登录</button></div></div>
-  <div id="cloudHistoryList" class="cloud-history-list" aria-label="云端历史记录"></div>
  </div></details>
  <div class="profile-row"><div class="profile-orb"><svg><use href="#i-spark"/></svg></div><div class="profile-text"><b>知行AI 工作台</b><span><i class="status-dot warn" id="workerDot"></i><span id="workerStatus">正在连接 Worker</span></span></div></div>
  <div class="sidebar-actions"><button class="outline-btn" id="exportBtn"><svg><use href="#i-upload"/></svg>导出</button><button class="outline-btn" id="importBtn"><svg><use href="#i-book"/></svg>导入</button><button class="icon-btn" id="clearBtn" title="清空对话" aria-label="清空对话"><svg><use href="#i-trash"/></svg></button></div></div>
@@ -166,11 +188,11 @@ function closeModal(id){const m=$(id);m.classList.remove('open');m.setAttribute(
 function openSettings(){$('useWorker').classList.toggle('active',state.mode==='worker');$('useOwnKey').classList.toggle('active',state.mode==='own');$('workerSettings').classList.toggle('hidden',state.mode!=='worker');$('ownSettings').classList.toggle('hidden',state.mode!=='own');$('selfProvider').value=state.provider;$('selfBase').value=provider().base;$('selfKey').value='';$('selfModel').value=state.ownModel||provider().models[0];$('systemPrompt').value=state.customPrompt;$('temperature').value=String(state.temperature);$('workerModelSelect').value=state.workerModel||'';openModal('settingsModal');if(state.mode==='worker'&&!state.workerModels.length)loadWorkerModels(true)}
 function setMode(mode){if(mode==='worker'&&state.mode==='own'){state.key='';$('selfKey').value='';}state.mode=mode;$('useWorker').classList.toggle('active',mode==='worker');$('useOwnKey').classList.toggle('active',mode==='own');$('workerSettings').classList.toggle('hidden',mode!=='worker');$('ownSettings').classList.toggle('hidden',mode!=='own');$('modeButton').innerHTML='<svg><use href="#i-'+(mode==='worker'?'lock':'key')+'"/></svg><span>'+(mode==='worker'?'Worker 模式':'自带 Key')+'</span>';$('privacyLine').textContent=mode==='worker'?'密钥由 Worker 保管；本页不保存私密对话':'API Key 仅保存在当前页面内存，关闭或刷新即清除';$('webSearchBtn').classList.toggle('hidden',mode!=='own'||!provider().web);$('temperature').disabled=mode==='worker';$('tempNote').textContent=mode==='worker'?'当前使用 Worker 后台配置的 Temperature。':'当前设置仅用于自带 API Key 模式。';if(mode==='worker'){modelOptions(state.workerModels,state.workerModel);if(!state.workerModels.length)loadWorkerModels(true)}else modelOptions(modelSource(),state.ownModel||provider().models[0]);updateTopSubtitle()}
 function updateTopSubtitle(){$('topSubtitle').textContent=(state.mode==='worker'?'Worker 统一接入':'自带 API Key')+' · 对话仅保存在当前页面'}
-function populateHistory(){const q=$('conversationSearch').value.trim().toLowerCase();const list=$('history');list.innerHTML='';const filtered=state.conversations.filter(c=>!q||c.title.toLowerCase().includes(q)||c.messages.some(m=>contentText(m.content).toLowerCase().includes(q)));$('historyCount').textContent=String(filtered.length);if(!filtered.length){list.innerHTML='<div class="history-empty">'+(q?'没有匹配的对话':'开始一段新对话吧')+'</div>';return}filtered.slice().reverse().forEach(c=>{const b=document.createElement('div');b.className='history-item'+(c.id===state.currentId?' active':'');b.tabIndex=0;b.setAttribute('role','button');b.innerHTML='<svg><use href="#i-chat"/></svg><span class="history-title">'+escapeHtml(c.title||'新对话')+'</span><button type="button" class="delete-one" data-delete="'+escapeHtml(c.id)+'" aria-label="删除此对话"><svg><use href="#i-x"/></svg></button>';b.addEventListener('click',e=>{const d=e.target.closest('[data-delete]');if(d){e.stopPropagation();deleteConversation(d.dataset.delete);return}selectConversation(c.id)});b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectConversation(c.id)}});list.appendChild(b)})}
+function populateHistory(){const q=$('conversationSearch').value.trim().toLowerCase();const list=$('history');list.innerHTML='';const filtered=state.conversations.filter(c=>!q||(c.title||'').toLowerCase().includes(q)||c.messages.some(m=>contentText(m.content).toLowerCase().includes(q)));$('historyCount').textContent=String(filtered.length);if(!filtered.length){list.innerHTML='<div class="history-empty">'+(q?'没有匹配的对话':'开始一段新对话吧')+'</div>';return}filtered.slice().sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).reverse().forEach(c=>{const b=document.createElement('div');b.className='history-item'+(c.id===state.currentId?' active':'');b.tabIndex=0;b.setAttribute('role','button');b.innerHTML='<svg><use href="#i-chat"/></svg><span class="history-title">'+escapeHtml(c.title||'新对话')+'</span>'+(c.cloudId?'<span class="history-cloud-label" title="此对话已同步到云端">云端</span>':'')+'<button type="button" class="delete-one" data-delete="'+escapeHtml(c.id)+'" aria-label="删除此对话"><svg><use href="#i-x"/></svg></button>';b.addEventListener('click',e=>{const d=e.target.closest('[data-delete]');if(d){e.stopPropagation();deleteConversation(d.dataset.delete);return}if(c.cloudId&&window.zxCloudHistory?.open){window.zxCloudHistory.open(c.cloudId).catch(err=>toast('读取云端记录失败：'+err.message));return}selectConversation(c.id)});b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(c.cloudId&&window.zxCloudHistory?.open){window.zxCloudHistory.open(c.cloudId).catch(err=>toast('读取云端记录失败：'+err.message));return}selectConversation(c.id)}});list.appendChild(b)})}
 function newConversation(){const c={id:Math.random().toString(36).slice(2)+Date.now().toString(36),title:'新对话',createdAt:Date.now(),messages:[]};state.conversations.push(c);state.currentId=c.id;showConversation();populateHistory();closeSidebar();$('topTitle').textContent='新对话';$('input').focus({preventScroll:true});return c}
 function selectConversation(id){state.currentId=id;showConversation();populateHistory();closeSidebar();const c=currentConversation();$('topTitle').textContent=c?c.title:'新对话'}
 function showConversation(){const c=currentConversation();const has=c&&c.messages.length>0;$('welcome').classList.toggle('hidden',!!has);$('messages').classList.toggle('hidden',!has);renderMessages();if(has)scrollToBottom(false);$('topTitle').textContent=has?c.title:'新对话'}
-function deleteConversation(id){const i=state.conversations.findIndex(c=>c.id===id);if(i<0)return;state.conversations.splice(i,1);if(state.currentId===id){state.currentId=null;showConversation()}populateHistory();if(!state.currentId&&state.conversations.length)selectConversation(state.conversations[state.conversations.length-1].id);else if(!state.currentId)$('topTitle').textContent='新对话';toast('已删除对话')}
+function deleteConversation(id){const item=state.conversations.find(c=>c.id===id);if(item?.cloudId&&window.zxCloudHistory?.delete){window.zxCloudHistory.delete(item.cloudId);return}const i=state.conversations.findIndex(c=>c.id===id);if(i<0)return;state.conversations.splice(i,1);if(state.currentId===id){state.currentId=null;showConversation()}populateHistory();if(!state.currentId&&state.conversations.length)selectConversation(state.conversations[state.conversations.length-1].id);else if(!state.currentId)$('topTitle').textContent='新对话';toast('已删除对话')}
 function closeSidebar(){$('sidebar').classList.remove('open');$('scrim').classList.remove('open')}
 function contentText(content){if(typeof content==='string')return content;if(Array.isArray(content))return content.map(p=>p.type==='text'?p.text:p.type==='image_url'?'[图片]':'').join('\n');return ''}
 function renderInline(s){const tick=String.fromCharCode(96);return s.replace(new RegExp(tick+'([^'+tick+']+)'+tick,'g'),'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>')}
