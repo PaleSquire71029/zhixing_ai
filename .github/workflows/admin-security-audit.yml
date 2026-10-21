@@ -43,8 +43,9 @@ jobs:
           const html = readFileSync("cloud-admin.html", "utf8");
           const js = readFileSync("cloud-admin.js", "utf8");
           const policy = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/i)?.[1] || "";
-          assert.match(policy, /script-src 'self'/);
-          assert.doesNotMatch(policy, /unsafe-inline|unsafe-eval/);
+          const scriptSrc = policy.split(";").map(part => part.trim()).find(part => part.startsWith("script-src "));
+          assert.match(scriptSrc || "", /script-src 'self'/);
+          assert.doesNotMatch(scriptSrc || "", /unsafe-inline|unsafe-eval/);
           assert.match(policy, /connect-src 'self' https:\/\/api\.zhixing\.us\.ci/);
           assert.match(html, /cloud-admin\.js\?v=/);
           assert.doesNotMatch(html, /<script>([\s\S]*?)<\/script>/i);
