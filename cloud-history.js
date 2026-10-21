@@ -7,7 +7,69 @@ const APP = 'zhixing-ai';
 const $ = id => document.getElementById(id);
 const client = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const uuid = () => crypto.randomUUID();
+const cloudItems = new Map();
 function status(message) { const el = $('cloudAccountStatus'); if (el) el.textContent = message; }
+function mergeIntoRecent(items) {
+  const app = window.zxAIApp;
+  if (!app) return;
+  const seen = new Set();
+  (items || []).forEach(item => {
+    const id = String(item.id);
+    seen.add(id);
+    cloudItems.set(id, item);
+    let conversation = app.state.conversations.find(c => c.cloudId === id);
+    const createdAt = Date.parse(item.created_at || item.last_activity_at || item.updated_at) || Date.now();
+    if (!conversation) {
+      conversation = {
+        id: 'cloud-' + id, cloudId: id, isCloud: true, cloudOnly: true,
+        title: item.title || '云端对话', createdAt, messages: []
+      };
+      app.state.conversations.push(conversation);
+    } else {
+      conversation.isCloud = true;
+      conversation.title = item.title || conversation.title || '云端对话';
+      if (conversation.cloudOnly) conversation.createdAt = createdAt;
+    }
+  });
+  app.state.conversations = app.state.conversations.filter(c => !c.cloudOnly || seen.has(String(c.cloudId)));
+  app.state.conversations.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  app.populateHistory();
+}
+function removeCloudConversation(id) {
+  const app = window.zxAIApp;
+  if (!app) return;
+  const i = app.state.conversations.findIndex(c => c.cloudId === String(id));
+  if (i >= 0) {
+    const removed = app.state.conversations.splice(i, 1)[0];
+    if (app.state.currentId === removed.id) {
+      app.state.currentId = null;
+      app.showConversation();
+    }
+  }
+  cloudItems.delete(String(id));
+  app.populateHistory();
+}
+async function openById(id) {
+  const key = String(id);
+  let item = cloudItems.get(key);
+  if (!item) {
+    const result = await api('/api/history/conversations');
+    mergeIntoRecent(result.conversations || []);
+    item = cloudItems.get(key);
+  }
+  if (!item) throw new Error('找不到这条云端对话，请刷新历史后重试。');
+  return openConversation(item);
+}
+async function deleteCloud(id) {
+  const item = cloudItems.get(String(id));
+  if (!confirm('删除这条云端对话？此操作不可撤销。')) return;
+  try {
+    await api('/api/history/conversations?id=' + encodeURIComponent(id), { method: 'DELETE' });
+    removeCloudConversation(id);
+    status('云端对话已删除。');
+    await refreshHistory(false);
+  } catch (e) { status('删除失败：' + e.message); }
+}
 async function api(path, options = {}) {
   const session = await client.auth.getSession();
   const token = session.data.session?.access_token;
@@ -29,29 +91,7 @@ async function refreshHistory(showStatus = true) {
   const session = await client.auth.getSession();
   if (!session.data.session) return;
   const result = await api('/api/history/conversations');
-  const host = $('cloudHistoryList'); host.replaceChildren();
-  (result.conversations || []).forEach(item => {
-    const row = document.createElement('div'); row.className = 'cloud-history-row';
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'cloud-history-item';
-    b.textContent = item.title || '新对话'; b.title = new Date(item.last_activity_at || item.updated_at).toLocaleString();
-    const active = currentConversation();
-    if (active?.cloudId === item.id) b.classList.add('active');
-    b.addEventListener('click', () => openConversation(item));
-    const del = document.createElement('button'); del.type = 'button'; del.className = 'cloud-history-delete'; del.textContent = '×'; del.title = '删除云端对话';
-    del.addEventListener('click', async () => {
-      if (!confirm('删除这条云端对话？此操作不可撤销。')) return;
-      try {
-        await api('/api/history/conversations?id=' + encodeURIComponent(item.id), { method: 'DELETE' });
-        const app = window.zxAIApp;
-        if (app) {
-          const i = app.state.conversations.findIndex(c => c.cloudId === item.id);
-          if (i >= 0) { const removed = app.state.conversations.splice(i, 1)[0]; if (app.state.currentId === removed.id) app.state.currentId = null; app.showConversation(); app.populateHistory(); }
-        }
-        await refreshHistory(false); status('云端对话已删除。');
-      } catch (e) { status('删除失败：' + e.message); }
-    });
-    row.append(b, del); host.appendChild(row);
-  });
+  mergeIntoRecent(result.conversations || []);
   if (showStatus) status('已登录 · 知行AI云历史 ' + (result.conversations || []).length + ' 条，保留 90 天。');
 }
 async function openConversation(item) {
@@ -61,9 +101,9 @@ async function openConversation(item) {
     let conversation = app.state.conversations.find(c => c.cloudId === item.id);
     const messages = (result.messages || []).filter(m => m.status === 'complete' && ['user', 'assistant'].includes(m.role)).map(m => ({ role: m.role, content: m.content, ts: Date.parse(m.created_at) || Date.now() }));
     if (!conversation) {
-      conversation = { id: 'cloud-' + uuid(), cloudId: item.id, title: item.title || '云端对话', createdAt: Date.now(), messages };
+      conversation = { id: 'cloud-' + item.id, cloudId: item.id, isCloud: true, cloudOnly: true, title: item.title || '云端对话', createdAt: Date.parse(item.created_at || item.last_activity_at || item.updated_at) || Date.now(), messages };
       app.state.conversations.push(conversation);
-    } else { conversation.title = item.title || conversation.title; conversation.messages = messages; }
+    } else { conversation.title = item.title || conversation.title; conversation.messages = messages; conversation.isCloud = true; conversation.messages = messages; }
     app.state.currentId = conversation.id; app.showConversation(); app.populateHistory();
     status('已恢复云端对话。'); await refreshHistory(false);
   } catch (e) { status('读取历史失败：' + e.message); }
@@ -90,7 +130,17 @@ async function refreshAuth() {
   $('cloudAuthForm').hidden = !!user; $('cloudSignedIn').hidden = !user;
   $('cloudEmailLabel').textContent = user?.email || '';
   if (user) { try { await refreshHistory(false); status('已登录 · 云对话会在回答后自动保存。'); } catch (e) { status('已登录，但云历史暂不可用：' + e.message); } }
-  else { $('cloudHistoryList').replaceChildren(); status('登录后可同步知行AI的文字对话；与学习版历史分开保存。'); }
+  else {
+    cloudItems.clear();
+    const app = window.zxAIApp;
+    if (app) {
+      app.state.conversations = app.state.conversations.filter(c => !c.cloudOnly);
+      app.state.conversations.forEach(c => { delete c.cloudId; delete c.isCloud; });
+      if (!app.state.conversations.some(c => c.id === app.state.currentId)) { app.state.currentId = null; app.showConversation(); }
+      app.populateHistory();
+    }
+    status('登录后可同步知行AI的文字对话；与学习版历史分开保存。');
+  }
 }
 async function auth(mode) {
   const email = $('cloudEmail').value.trim(), password = $('cloudPassword').value;
@@ -110,6 +160,6 @@ $('cloudRegister').addEventListener('click', () => auth('signup'));
 $('cloudLogout').addEventListener('click', async () => { await client?.auth.signOut(); await refreshAuth(); });
 $('cloudRefresh').addEventListener('click', () => refreshHistory());
 if (client) client.auth.onAuthStateChange(() => setTimeout(refreshAuth, 0));
-window.zxCloudHistory = { messageId: uuid, saveMessage, refresh: refreshHistory };
+window.zxCloudHistory = { messageId: uuid, saveMessage, refresh: refreshHistory, open: openById, delete: deleteCloud };
 refreshAuth();
 })();
