@@ -264,6 +264,10 @@ async function resetStats(btn){if(!confirm("确定清空"+appName(activeApp)+"�
 async function refreshScope(btn){busy(btn,true,"刷新中…");try{await loadScope(activeApp);toast("当前产品已刷新")}catch(e){note("securityNotice",e.message,"bad")}finally{busy(btn,false)}}
 document.addEventListener("DOMContentLoaded",function(){
  $("loginForm").addEventListener("submit",login);$("logoutTop").addEventListener("click",logoutAll);$("logoutAll").addEventListener("click",logoutAll);
+ document.querySelectorAll("[data-login-mode]").forEach(function(b){b.addEventListener("click",function(){setLoginMode(b.dataset.loginMode)})});
+ $("userLoginForm").addEventListener("submit",userLogin);$("userLogout").addEventListener("click",userLogout);
+ $("userPasswordForm").addEventListener("submit",changeOwnPassword);
+ $("userPasswordClear").addEventListener("click",function(){$("userCurrentPassword").value="";$("userNewPassword").value="";$("userConfirmPassword").value="";note("userPasswordNotice","")});
  document.querySelectorAll("[data-app]").forEach(function(b){b.addEventListener("click",function(){activateApp(b.dataset.app)})});document.querySelectorAll("[data-view]").forEach(function(b){b.addEventListener("click",function(){activateView(b.dataset.view)})});document.querySelectorAll("[data-go]").forEach(function(b){b.addEventListener("click",function(){activateView(b.dataset.go)})});
  $("checkAll").addEventListener("click",function(){checkAll($("checkAll"))});$("fetchModels").addEventListener("click",function(){getModels($("fetchModels"))});$("saveSettings").addEventListener("click",function(){saveConfig($("saveSettings"))});$("testChat").addEventListener("click",function(){testChat($("testChat"))});$("revealKey").addEventListener("click",function(){revealKey($("revealKey"))});$("balanceBtn").addEventListener("click",function(){balanceCheck($("balanceBtn"))});
  $("promptChoice").addEventListener("change",function(){$("promptText").value=promptValue($("promptChoice").value);$("promptCounter").textContent=Array.from($("promptText").value).length+" 字"});$("promptText").addEventListener("input",function(){$("promptCounter").textContent=Array.from(this.value).length+" 字"});$("savePrompt").addEventListener("click",function(){savePrompt($("savePrompt"))});$("revertPrompt").addEventListener("click",revertPrompt);
@@ -305,7 +309,10 @@ document.addEventListener("DOMContentLoaded",function(){
  });
  document.addEventListener("change",function(e){var t=e.target.closest("[data-cloud-select]");if(!t)return;if(t.checked)cloudState.selected.add(t.dataset.cloudSelect);else cloudState.selected.delete(t.dataset.cloudSelect);cloudUpdateSelected();$("cloudSelectAll").checked=cloudState.rows.length>0&&cloudState.rows.every(function(row){return cloudState.selected.has(row.id)})});
  var logged=APPS.filter(function(a){return !!tokens[a.id]});
- if(logged.length===2&&tokens.cloud){$("login").hidden=true;$("app").hidden=false;headerState();Promise.all(APPS.map(function(a){return loadScope(a.id)})).then(function(){activateApp(logged[0].id);var initialView=new URLSearchParams(location.search).get("view")==="cloud"?"cloud":"overview";activateView(initialView)})}
- else{if(logged.length||tokens.cloud){APPS.forEach(function(a){setToken(a.id,"")});setToken("cloud","");note("loginNotice","管理后台已整合，请重新登录一次以启用云端数据和账号管理。","info")}headerState()}
+ if(tokens.user){
+  clearAdminSession();$("login").hidden=true;$("app").hidden=true;$("userPortal").hidden=false;
+  userRequest("/api/account/me").then(function(data){renderUserProfile(data.user);enterUserPortal(data.user)}).catch(function(error){clearUserSession();$("userPortal").hidden=true;$("login").hidden=false;setLoginMode("user");note("userLoginNotice",error.message||"登录已过期，请重新登录。","warn")});
+ }else if(logged.length===2&&tokens.cloud){$("login").hidden=true;$("userPortal").hidden=true;$("app").hidden=false;headerState();Promise.all(APPS.map(function(a){return loadScope(a.id)})).then(function(){activateApp(logged[0].id);var initialView=new URLSearchParams(location.search).get("view")==="cloud"?"cloud":"overview";activateView(initialView)})}
+ else{if(logged.length||tokens.cloud){clearAdminSession();note("loginNotice","管理权限已更新，请重新登录。","info")}setLoginMode("admin");headerState()}
 });
 })();
