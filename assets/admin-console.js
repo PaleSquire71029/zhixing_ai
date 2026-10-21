@@ -42,6 +42,80 @@ function current(){return cache[activeApp]||{}}
 function settings(){return current().settings||{apiBaseUrl:"https://api.a6api.com/v1",model:"",temperature:.2,maxTokens:0,hasApiKey:false,apiKeySource:"missing",prompts:normalizePrompts({},current().defaults),stats:{recent:[]}}}
 function activateApp(id){activeApp=id;page=1;expanded={};document.querySelectorAll("[data-app]").forEach(function(b){b.classList.toggle("active",b.dataset.app===id)});fillConfig(true);fillChoices();renderAll()}
 function activateView(view){activeView=view;document.querySelectorAll("[data-view]").forEach(function(b){b.classList.toggle("active",b.dataset.view===view)});document.querySelectorAll("[data-panel]").forEach(function(p){p.classList.toggle("active",p.dataset.panel===view)});if(view==="records")renderLogs();if(view==="prompts")fillChoices();if(view==="cloud"&&tokens.cloud){cloudTab(cloudState.tab||"overview")}window.scrollTo({top:0,behavior:"smooth"})}
+function setLoginMode(mode){
+ document.querySelectorAll("[data-login-mode]").forEach(function(b){b.classList.toggle("active",b.dataset.loginMode===mode)});
+ $("adminLoginPanel").hidden=mode!=="admin";$("userLoginPanel").hidden=mode!=="user";
+ if(mode==="admin")$("password").focus();else $("userLoginEmail").focus();
+}
+function userSaveSession(data){
+ setToken("user",data.accessToken||"");userRefreshToken=String(data.refreshToken||"");
+ userExpiry=Date.now()+Math.max(60,Number(data.expiresIn)||3600)*1000;
+ try{if(userRefreshToken)sessionStorage.setItem("zx-ai-user-refresh-token",userRefreshToken);sessionStorage.setItem("zx-ai-user-expiry",String(userExpiry))}catch(e){}
+}
+function userLocation(reg){
+ reg=reg||{};var parts=[reg.city,reg.region,reg.country].filter(function(v){return typeof v==="string"&&v.trim()});
+ return parts.join(" · ")||"未能定位";
+}
+function renderUserProfile(user){
+ userProfile=user||{};var reg=userProfile.registration||{};
+ $("userProfileEmail").textContent=userProfile.email||"—";
+ $("userProfileCreated").textContent=time(userProfile.createdAt);
+ $("userProfileIp").textContent=reg.ip||"未记录";
+ $("userProfileLocation").textContent=userLocation(reg);
+ $("userProfileId").textContent=userProfile.id||"—";
+ $("userVerified").textContent=userProfile.emailConfirmedAt?"邮箱已确认":"邮箱未确认";
+ $("userVerified").className="status-chip "+(userProfile.emailConfirmedAt?"good":"warn");
+}
+function enterUserPortal(user){
+ $("login").hidden=true;$("app").hidden=true;$("userPortal").hidden=false;
+ renderUserProfile(user);note("userProfileNotice","");headerState();
+}
+function userRequest(path,opt){
+ opt=opt||{};
+ return api("user",path,opt).catch(async function(error){
+  if(path==="/api/account/refresh"||!userRefreshToken||!(error.message||"").includes("会话已失效"))throw error;
+  try{
+   var rotated=await api("user","/api/account/refresh",{method:"POST",noAuth:true,timeout:12000,body:{refreshToken:userRefreshToken}});
+   userSaveSession(rotated);if(rotated.user)renderUserProfile(rotated.user);
+   return await api("user",path,opt);
+  }catch(refreshError){
+   clearUserSession();$("userPortal").hidden=true;$("app").hidden=true;$("login").hidden=false;setLoginMode("user");
+   note("userLoginNotice","登录已过期，请重新登录。","warn");throw refreshError;
+  }
+ });
+}
+async function userLogin(ev){
+ ev.preventDefault();var btn=$("userLoginButton");busy(btn,true,"正在登录…");note("userLoginNotice","");
+ try{
+  var data=await api("user","/api/account/login",{method:"POST",noAuth:true,timeout:15000,body:{email:$("userLoginEmail").value.trim(),password:$("userLoginPassword").value}});
+  if(!data.accessToken||!data.refreshToken||!data.user||!data.user.id)throw new Error("登录服务未返回完整会话。");
+  clearAdminSession();userSaveSession(data);$("userLoginPassword").value="";
+  enterUserPortal(data.user);
+  var profile=await userRequest("/api/account/me");
+  renderUserProfile(profile.user);
+ }catch(error){clearUserSession();note("userLoginNotice",error.message||"登录失败，请检查邮箱和密码。","bad");}
+ finally{busy(btn,false)}
+}
+async function userLogout(){
+ try{if(tokens.user)await userRequest("/api/account/logout",{method:"POST",body:{}})}catch(e){}
+ clearUserSession();$("userPortal").hidden=true;$("login").hidden=false;$("app").hidden=true;setLoginMode("user");
+ note("userLoginNotice","已退出登录。","ok");headerState();
+}
+async function changeOwnPassword(ev){
+ ev.preventDefault();
+ var current=$("userCurrentPassword").value,next=$("userNewPassword").value,confirmNext=$("userConfirmPassword").value,btn=$("userPasswordButton");
+ if(next.length<8||next.length>128){note("userPasswordNotice","新密码需要 8–128 个字符。","bad");return}
+ if(next!==confirmNext){note("userPasswordNotice","两次输入的新密码不一致。","bad");return}
+ if(current===next){note("userPasswordNotice","新密码不能与当前密码相同。","bad");return}
+ if(!confirm("确认修改当前账号密码？修改后请使用新密码登录。"))return;
+ busy(btn,true,"正在更新…");note("userPasswordNotice","");
+ try{
+  await userRequest("/api/account/password",{method:"POST",body:{currentPassword:current,newPassword:next}});
+  $("userCurrentPassword").value="";$("userNewPassword").value="";$("userConfirmPassword").value="";
+  note("userPasswordNotice","密码已更新。","ok");toast("密码修改成功");
+ }catch(error){note("userPasswordNotice",error.message||"密码更新失败。","bad")}
+ finally{busy(btn,false)}
+}
 var cloudActionLabels={delete_conversation:"删除单条会话",delete_selected:"批量删除会话",delete_user_data:"清除用户聊天数据",cleanup_90d:"清理 90 天过期数据",create_account:"创建用户账号"};
 function cloudEsc(value){return String(value==null?"":value).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function cloudNum(value){return value===null||value===undefined?"—":Number(value).toLocaleString("zh-CN")}
