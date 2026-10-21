@@ -35,28 +35,31 @@ jobs:
         run: node --check assets/admin-console.js
       - name: Check cloud dashboard JavaScript syntax
         run: node --check cloud-admin.js
-      - name: Verify cloud dashboard isolation and safe rendering
+      - name: Verify unified cloud module and account creation safety
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync } from "node:fs";
           import assert from "node:assert/strict";
-          const html = readFileSync("cloud-admin.html", "utf8");
-          const js = readFileSync("cloud-admin.js", "utf8");
+          const html = readFileSync("ai-admin.html", "utf8");
+          const js = readFileSync("assets/admin-console.js", "utf8");
           const policy = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/i)?.[1] || "";
           const scriptSrc = policy.split(";").map(part => part.trim()).find(part => part.startsWith("script-src "));
           assert.match(scriptSrc || "", /script-src 'self'/);
           assert.doesNotMatch(scriptSrc || "", /unsafe-inline|unsafe-eval/);
           assert.match(policy, /connect-src 'self' https:\/\/api\.zhixing\.us\.ci/);
-          assert.match(html, /cloud-admin\.js\?v=/);
-          assert.doesNotMatch(html, /<script>([\s\S]*?)<\/script>/i);
+          assert.match(html, /data-view="cloud"/, "Cloud data must be part of the unified menu.");
+          assert.match(html, /id="cloudPane-accounts"/, "Account management must be in the unified UI.");
+          assert.match(html, /id="cloudCreateAccountForm"/, "Admin account registration form must exist.");
+          assert.match(js, /result\.tokens\.cloud/, "Unified login must receive its scoped cloud token.");
+          assert.match(js, /\/admin\/cloud\/accounts/, "Account operations must use the protected Worker endpoint.");
+          assert.match(js, /emailOwnershipConfirmed/, "Account creation must require mailbox ownership confirmation.");
+          assert.match(js, /body\.textContent=m\.content/, "Stored chat content must be rendered as text, not HTML.");
+          assert.match(js, /sessionStorage\.setItem\(TOKEN_KEY\+app,token\)/);
           assert.doesNotMatch(html + "\n" + js, /SUPABASE_SERVICE_ROLE_KEY|sb_secret_|service_role/i);
-          assert.match(js, /sessionStorage\.setItem\(TOKEN_KEY/);
           assert.doesNotMatch(js, /localStorage\.setItem\([^)]*(?:token|TOKEN_KEY)/i);
-          assert.match(js, /body\.textContent=message\.content/);
-          assert.match(js, /\/admin\/cloud\/login/);
-          assert.match(js, /DELETE_USER_DATA/);
-          assert.match(js, /CLEANUP_90D/);
-          console.log("Cloud dashboard CSP, scoped-session storage, no secret exposure, and safe message rendering checks passed.");
+          assert.match(readFileSync("cloud-admin.html", "utf8"), /ai-admin\.html\?view=cloud/);
+          assert.match(readFileSync("cloud-admin.js", "utf8"), /location\.replace\("\/ai-admin\.html\?view=cloud"\)/);
+          console.log("Unified admin cloud module, account registration guardrails, session storage, and secret isolation passed.");
           NODE
       - name: Verify CSP and secret-handling invariants
         run: |
