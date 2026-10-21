@@ -3,7 +3,7 @@
 const API='https://api.zhixing.us.ci';
 const TOKEN_KEY='zx-cloud-admin-token-v1', EXP_KEY='zx-cloud-admin-expiry-v1';
 const $=id=>document.getElementById(id);
-const state={token:'',view:'overview',overview:null,app:'zhixing-ai',page:1,pageSize:20,total:null,selected:new Set(),rows:[],users:[],activeConversation:null,messageOffset:0,messageTotal:null,userFilterId:''};
+const state={token:'',view:'overview',overview:null,app:'zhixing-ai',page:1,pageSize:20,total:null,selected:new Set(),rows:[],users:[],activeConversation:null,messageOffset:0,messageTotal:null,userFilterId:'',audit:[]};
 const appName=app=>app==='learning'?'学习版':'知行AI';
 const fmtDate=value=>{if(!value)return '—';const date=new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});};
 const fmtNum=value=>value===null||value===undefined?'—':Number(value).toLocaleString('zh-CN');
@@ -17,7 +17,7 @@ function getToken(){const expiry=Number(sessionStorage.getItem(EXP_KEY)||0);if(e
 async function api(path,options={}){const headers={'Accept':'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(state.token?{'Authorization':'Bearer '+state.token}:{})};let response;try{response=await fetch(API+path,{...options,headers,cache:'no-store',credentials:'omit',redirect:'error'});}catch{throw new Error('无法连接管理 Worker，请检查网络后重试。');}const data=await response.json().catch(()=>({}));if(response.status===401&&path!=='/admin/cloud/login'){logout(false);throw new Error('管理会话已失效，请重新登录。');}if(!response.ok)throw new Error(data.error||'请求失败（HTTP '+response.status+'）');return data;}
 function logout(show=true){state.token='';sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(EXP_KEY);setLoggedIn(false);if(show)setStatus('loginStatus','已退出管理会话。');}
 async function login(event){event.preventDefault();const button=$('loginButton');setBusy(button,true,'验证中…');setStatus('loginStatus','正在验证管理员身份…');try{const data=await api('/admin/cloud/login',{method:'POST',body:JSON.stringify({password:$('password').value})});if(!data.token)throw new Error('Worker 未返回有效管理会话。');state.token=data.token;sessionStorage.setItem(TOKEN_KEY,data.token);sessionStorage.setItem(EXP_KEY,String(Date.now()+Math.min(Number(data.expiresIn)||7200000,7200000)));$('password').value='';setLoggedIn(true);setStatus('loginStatus','');await loadOverview();switchView('overview');}catch(error){setStatus('loginStatus',error.message,'error');}finally{setBusy(button,false);}}
-function switchView(view){state.view=view;document.querySelectorAll('.navbtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));document.querySelectorAll('.section').forEach(section=>section.classList.toggle('active',section.id==='view-'+view));const titles={overview:['数据概览','了解云端会话、消息与清理状态。'],conversations:['会话记录','按产品检索、查看和管理云端文字对话。'],users:['用户列表','查看拥有云端会话的匿名用户标识。']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];if(view==='conversations'&&!state.rows.length)loadConversations();if(view==='users'&&!state.users.length)loadUsers();}
+function switchView(view){state.view=view;document.querySelectorAll('.navbtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));document.querySelectorAll('.section').forEach(section=>section.classList.toggle('active',section.id==='view-'+view));const titles={overview:['数据概览','了解云端会话、消息与清理状态。'],conversations:['会话记录','按产品检索、查看和管理云端文字对话。'],users:['用户列表','查看拥有云端会话的匿名用户标识。'],audit:['操作日志','查看最近的管理操作；日志不含聊天正文。']};$('pageTitle').textContent=titles[view][0];$('pageSubtitle').textContent=titles[view][1];if(view==='conversations'&&!state.rows.length)loadConversations();if(view==='users'&&!state.users.length)loadUsers();if(view==='audit'&&!state.audit.length)loadAudit();}
 async function loadOverview(){const loading=$('overviewLoading');loading.classList.remove('hidden');try{const data=await api('/admin/cloud/overview');state.overview=data;renderOverview(data);}catch(error){toast(error.message);}finally{loading.classList.add('hidden');}}
 function renderOverview(data){const stats=[
 ['云端会话',fmtNum(data.totals?.conversations),'两款产品合计','▤'],
@@ -35,6 +35,35 @@ $('conversationList').innerHTML=rows.map(row=>'<article class="record"><input cl
 function updateBulkControls(){const count=state.selected.size;$('selectedCount').textContent=count;$('bulkDeleteButton').disabled=!count;}
 async function loadUsers(){setStatus('userListStatus','正在查询会话索引…');$('userList').innerHTML='<div class="empty"><div class="loadingline"></div></div>';try{const params=new URLSearchParams({app:$('userAppFilter').value});const q=$('userSearch').value.trim();if(q)params.set('q',q);const data=await api('/admin/cloud/users?'+params.toString());state.users=data.users||[];$('userListStatus').textContent=data.note+' · 本次扫描 '+fmtNum(data.scannedSessions)+' 条会话。';renderUsers();if(data.truncated)$('userListStatus').textContent+=' 列表已达到扫描上限，可输入完整 UUID 精确定位。';}catch(error){$('userList').innerHTML='<div class="empty">'+esc(error.message)+'</div>';setStatus('userListStatus',error.message,'error');}}
 function renderUsers(){if(!state.users.length){$('userList').innerHTML='<div class="empty"><span class="emptyicon">♙</span>没有匹配的用户</div>';return;}$('userList').innerHTML=state.users.map(user=>'<article class="userrow"><div><div class="user-id">'+esc(user.user_id)+'</div><div class="user-detail">会话 '+fmtNum(user.conversation_count)+' 条 · 产品 '+user.apps.map(appName).map(esc).join('、')+'<br>最近活动 '+esc(fmtDate(user.last_activity_at))+'</div></div><div class="user-actions"><button class="btn soft" data-user-conversations="'+esc(user.user_id)+'" data-user-app="'+esc(user.apps[0]||'zhixing-ai')+'" type="button">查看会话</button><button class="btn danger" data-delete-user="'+esc(user.user_id)+'" type="button">清除聊天数据</button></div></article>').join('');}
+const auditActionLabel={
+  delete_conversation:"删除单条会话",
+  delete_selected:"批量删除会话",
+  delete_user_data:"清除用户聊天数据",
+  cleanup_90d:"清理 90 天过期数据"
+};
+async function loadAudit(){
+  $('auditStatus').textContent='正在读取操作日志…';
+  $('auditList').innerHTML='<div class="empty"><div class="loadingline"></div></div>';
+  try{
+    const data=await api('/admin/cloud/audit');
+    state.audit=data.entries||[];
+    renderAudit();
+    $('auditStatus').textContent='最近 '+state.audit.length+' 条记录 · 日志仅保存操作元数据，不包含聊天正文。';
+  }catch(error){
+    $('auditList').innerHTML='<div class="empty">'+esc(error.message)+'</div>';
+    $('auditStatus').textContent=error.message;
+  }
+}
+function renderAudit(){
+  if(!state.audit.length){
+    $('auditList').innerHTML='<div class="empty"><span class="emptyicon">◷</span>还没有管理操作记录<br>删除会话或执行清理后，日志会显示在这里。</div>';
+    return;
+  }
+  $('auditList').innerHTML=state.audit.map(entry=>{
+    const appLabel=entry.app==='all'?'全部产品':appName(entry.app);
+    return '<article class="audit-row"><div class="audit-icon">◷</div><div><div class="audit-title">'+esc(auditActionLabel[entry.action]||'管理操作')+'</div><div class="audit-meta">'+esc(appLabel)+' · '+esc(fmtDate(entry.at))+'<br>记录编号 '+esc(shortId(entry.id))+'</div></div><div class="audit-count">'+fmtNum(entry.affectedCount)+'<span style="display:block;font-size:9px;font-weight:500;color:var(--muted);text-align:right;margin-top:3px">条会话</span></div></article>';
+  }).join('');
+}
 async function openConversation(id){const row=state.rows.find(item=>item.id===id);if(!row)return;state.activeConversation=row;state.messageOffset=0;state.messageTotal=null;$('detailBackdrop').classList.remove('hidden');$('detailTitle').textContent=row.title||'未命名对话';$('detailMeta').textContent=appName(row.app_id)+' · 用户 '+row.user_id+' · '+fmtDate(row.last_activity_at);$('messageList').innerHTML='';$('detailStatus').textContent='正在加载消息…';$('olderMessages').disabled=true;await loadMessages(true);}
 async function loadMessages(reset=false){const row=state.activeConversation;if(!row)return;const offset=reset?0:state.messageOffset;try{const params=new URLSearchParams({app:row.app_id,conversation_id:row.id,offset:String(offset)});const data=await api('/admin/cloud/messages?'+params.toString());state.messageTotal=data.total;if(reset)$('messageList').innerHTML='';const msgs=data.messages||[];for(const message of msgs){const role=message.role==='user'?'用户':message.role==='assistant'?'助手':'系统';const article=document.createElement('article');article.className='message '+(message.role==='user'?'user':message.role==='assistant'?'assistant':'system');const top=document.createElement('div');top.className='message-top';const who=document.createElement('span');who.className='message-role';who.textContent=role;const when=document.createElement('span');when.textContent=fmtDate(message.created_at);const body=document.createElement('div');body.className='message-content';body.textContent=message.content||'';top.append(who,when);article.append(top,body);$('messageList').append(article);}state.messageOffset=offset+msgs.length;$('detailStatus').textContent='已显示 '+fmtNum(state.messageOffset)+(state.messageTotal===null?'':' / '+fmtNum(state.messageTotal))+' 条消息。';$('olderMessages').disabled=!msgs.length||(state.messageTotal!==null&&state.messageOffset>=state.messageTotal);$('olderMessages').textContent=state.messageTotal!==null&&state.messageOffset>=state.messageTotal?'已加载全部消息':'加载更多消息';}catch(error){$('detailStatus').textContent=error.message;$('olderMessages').disabled=true;}}
 function closeDetail(){$('detailBackdrop').classList.add('hidden');state.activeConversation=null;}
@@ -43,7 +72,7 @@ async function bulkDelete(){const ids=[...state.selected];if(!ids.length)return;
 async function deleteUser(userId){if(!confirm('清除用户 '+userId+' 在两个产品中的全部云端聊天记录？这不会删除 Supabase 登录账号，但会永久删除该用户的全部会话与消息。'))return;try{const data=await api('/admin/cloud/users/delete',{method:'POST',body:JSON.stringify({user_id:userId,confirm:'DELETE_USER_DATA'})});toast('已清除 '+data.deleted+' 条会话');await Promise.all([loadOverview(),loadUsers()]);}catch(error){toast(error.message);}}
 async function cleanupExpired(){const count=Number(state.overview?.totals?.expired||0);if(!count)return;if(!confirm('将清理超过 90 天未活跃的会话及其消息。检测到约 '+count+' 条会话，确定执行？'))return;const button=$('cleanupButton');setBusy(button,true,'清理中…');try{const data=await api('/admin/cloud/cleanup',{method:'POST',body:JSON.stringify({confirm:'CLEANUP_90D'})});toast('清理完成：删除 '+data.deletedConversations+' 条过期会话');await loadOverview();}catch(error){toast(error.message);}finally{setBusy(button,false);}}
 function applyUserFilter(id,app){state.userFilterId=id;$('searchInput').value='';$('appFilter').value=app;state.page=1;state.selected.clear();switchView('conversations');loadConversations();}
-function refreshCurrent(){if(state.view==='overview')return loadOverview();if(state.view==='conversations')return loadConversations();return loadUsers();}
+function refreshCurrent(){if(state.view==='overview')return loadOverview();if(state.view==='conversations')return loadConversations();if(state.view==='users')return loadUsers();return loadAudit();}
 document.querySelectorAll('.navbtn').forEach(btn=>btn.addEventListener('click',()=>switchView(btn.dataset.view)));
 document.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>switchView(btn.dataset.go)));
 $('loginForm').addEventListener('submit',login);$('logoutButton').addEventListener('click',()=>logout());$('refreshButton').addEventListener('click',refreshCurrent);
@@ -54,7 +83,7 @@ $('prevPage').addEventListener('click',()=>{if(state.page>1){state.page--;loadCo
 $('nextPage').addEventListener('click',()=>{state.page++;loadConversations();});
 $('selectAll').addEventListener('change',e=>{state.rows.forEach(row=>e.target.checked?state.selected.add(row.id):state.selected.delete(row.id));updateBulkControls();document.querySelectorAll('[data-select]').forEach(c=>c.checked=e.target.checked);});
 $('bulkDeleteButton').addEventListener('click',bulkDelete);$('clearSelectionButton').addEventListener('click',()=>{state.selected.clear();updateBulkControls();renderConversations();});
-$('loadUsersButton').addEventListener('click',loadUsers);$('userSearchButton').addEventListener('click',loadUsers);$('userSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadUsers();});$('userAppFilter').addEventListener('change',loadUsers);
+$('loadUsersButton').addEventListener('click',loadUsers);$('loadAuditButton').addEventListener('click',loadAudit);$('userSearchButton').addEventListener('click',loadUsers);$('userSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadUsers();});$('userAppFilter').addEventListener('change',loadUsers);
 $('cleanupButton').addEventListener('click',cleanupExpired);$('closeDetail').addEventListener('click',closeDetail);$('detailBackdrop').addEventListener('click',e=>{if(e.target===$('detailBackdrop'))closeDetail();});$('olderMessages').addEventListener('click',()=>loadMessages(false));$('deleteCurrent').addEventListener('click',()=>state.activeConversation&&deleteConversation(state.activeConversation.id));
 document.addEventListener('click',e=>{const target=e.target.closest('[data-open-app],[data-open],[data-delete],[data-select],[data-user-conversations],[data-delete-user]');if(!target)return;
 if(target.dataset.openApp){$('appFilter').value=target.dataset.openApp;state.page=1;state.userFilterId='';switchView('conversations');loadConversations();return;}
