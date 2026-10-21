@@ -218,7 +218,7 @@ async function cloudCreateAccount(ev){
  if(!confirm("将为 "+email+" 创建 Supabase 登录账号，并把邮箱标记为已确认。请确保你已核验该邮箱归属。继续吗？"))return;
  busy(btn,true,"创建中…");note("cloudCreateAccountNotice","正在安全创建账号…");
  try{var data=await cloudApi("/admin/cloud/accounts",{method:"POST",body:{email:email,password:password,emailOwnershipConfirmed:confirmed}});
- $("cloudAccountPassword").value="";$("cloudEmailOwnershipConfirmed").checked=false;$("cloudAccountSearch").value="";cloudState.accountPage=1;note("cloudCreateAccountNotice","账号创建成功："+(data.user&&data.user.email||email)+"。初始密码不会保存到后台。","ok");toast("账号创建成功");await Promise.all([loadCloudAccounts(),loadCloudAudit(),loadCloudOverview()])
+ $("cloudAccountPassword").value="";$("cloudEmailOwnershipConfirmed").checked=false;$("cloudAccountSearch").value="";cloudState.accountPage=1;note("cloudCreateAccountNotice",data.registrationSaved===false?"账号已创建，但注册 IP 记录未保存；请检查 Worker 存储后再核对。":"账号创建成功："+(data.user&&data.user.email||email)+"。初始密码不会保存到后台。","ok");toast("账号创建成功");await Promise.all([loadCloudAccounts(),loadCloudAudit(),loadCloudOverview()])
  }catch(e){note("cloudCreateAccountNotice",e.message,"bad")}
  finally{busy(btn,false)}
 }
