@@ -51,6 +51,15 @@ jobs:
           assert.match(html, /id="cloudPane-accounts"/, "Account management must be in the unified UI.");
           assert.match(html, /id="cloudCreateAccountForm"/, "Admin account registration form must exist.");
           assert.match(html, /id="modelPicker"/, "Model selection must use a native select control.");
+          assert.match(html, /id="providerPreset"/, "Provider switcher must be present.");
+          assert.match(html, /id="providerPortal"/, "The selected provider's console link must be present.");
+          assert.match(html, /id="balanceView"/, "Balance results must be visible in the model configuration panel.");
+          assert.match(js, /function providerForUrl\(/, "Saved API URLs must map to a provider.");
+          assert.match(js, /providerChanged&&!b\.apiKey/, "Changing providers must require a new provider token.");
+          assert.match(js, /async function balanceCheck\(/, "Balance lookup must remain available.");
+          assert.match(js, /d\.provider==="DeepSeek"/, "Balance view must handle DeepSeek.");
+          assert.match(js, /d\.provider==="OpenRouter"/, "Balance view must handle OpenRouter.");
+          assert.match(js, /d\.provider==="SiliconFlow"/, "Balance view must handle SiliconFlow.");
           assert.doesNotMatch(html, /datalist id="modelOptions"/, "Avoid unreliable mobile datalist selection.");
           assert.match(js, /modelPicker.*addEventListener\("change"/, "Model dropdown must synchronize the selected model.");
           assert.match(js, /function renderModelPicker\(/, "Model list must populate the native selector.");
