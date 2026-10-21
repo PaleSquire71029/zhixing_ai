@@ -73,7 +73,7 @@ function enterUserPortal(user){
 function userRequest(path,opt){
  opt=opt||{};
  return api("user",path,opt).catch(async function(error){
-  if(path==="/api/account/refresh"||!userRefreshToken||!(error.message||"").includes("会话已失效"))throw error;
+  if(path==="/api/account/refresh"||!userRefreshToken||!/(会话已失效|登录已失效)/.test(error.message||""))throw error;
   try{
    var rotated=await api("user","/api/account/refresh",{method:"POST",noAuth:true,timeout:12000,body:{refreshToken:userRefreshToken}});
    userSaveSession(rotated);if(rotated.user)renderUserProfile(rotated.user);
