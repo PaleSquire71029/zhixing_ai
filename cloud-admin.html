@@ -3,119 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f8fc">
-<meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex,nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://api.zhixing.us.ci; object-src 'none'; frame-src 'none'; upgrade-insecure-requests">
-<title>知行AI · 云端数据中心</title>
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; script-src 'self'; style-src 'unsafe-inline'; upgrade-insecure-requests">
+<meta http-equiv="refresh" content="0;url=/ai-admin.html?view=cloud">
+<title>正在打开统一管理中心 · 知行AI</title>
 <style>
-:root{color-scheme:light;--bg:#f5f7fb;--paper:#fff;--ink:#18253a;--muted:#7c8799;--line:#e8edf4;--blue:#4c69ed;--blue2:#edf1ff;--mint:#dff8ee;--green:#197e5f;--amber:#fff1d7;--orange:#b76e14;--red:#c84752;--shadow:0 12px 36px rgba(30,53,103,.055);font-family:"OPPO Sans 4.0","MiSans","PingFang SC",system-ui,-apple-system,"Segoe UI",sans-serif}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}body{min-height:100dvh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:wait}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #c8d3ff;outline-offset:2px}
-.hidden{display:none!important}.shell{min-height:100dvh}.login-shell{min-height:100dvh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 12% 0%,#e7edff 0,transparent 42%),radial-gradient(ellipse at 100% 100%,#dff8ee 0,transparent 36%),var(--bg)}
-.login-card{width:min(100%,440px);background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:clamp(24px,6vw,38px);box-shadow:0 24px 80px rgba(45,65,123,.12)}
-.brand{display:flex;align-items:center;gap:12px}.brandmark{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#7187ff,#4b65e7);box-shadow:0 8px 20px #4c69ed35;font-weight:800;font-size:20px}.brandtitle{font-size:16px;font-weight:780;letter-spacing:-.03em}.brandhint{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.13em}
-.kicker{font-size:10px;font-weight:800;letter-spacing:.17em;color:var(--blue);margin-top:34px}.login-title{font-size:28px;line-height:1.25;letter-spacing:-.055em;margin:9px 0}.login-copy{font-size:13px;color:var(--muted);line-height:1.8;margin:0 0 24px}
-.field{display:grid;gap:8px;margin:12px 0}.field label{font-size:12px;font-weight:700;color:#46536b}.field input,.field select,.searchbox input,.select{width:100%;min-width:0;min-height:44px;padding:11px 13px;border:1px solid #e1e7f0;border-radius:13px;background:#fff;color:var(--ink);outline:none}.field input:focus,.searchbox input:focus,.select:focus{border-color:#9baaff;box-shadow:0 0 0 3px #4c69ed12}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 13px;border-radius:12px;border:1px solid var(--line);background:#fff;color:#4e5a70;font-size:12px;font-weight:700;white-space:nowrap;transition:background .18s,border-color .18s,transform .18s}.btn:hover{border-color:#cfd8fa;background:#f9faff}.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 5px 14px #4c69ed22}.btn.primary:hover{background:#3f5de1}.btn.soft{background:var(--blue2);color:var(--blue);border-color:#e3e9ff}.btn.danger{color:var(--red);background:#fff7f7;border-color:#f5dfe1}.btn.full{width:100%;min-height:48px;margin-top:8px;border-radius:14px}
-.status{min-height:18px;font-size:12px;line-height:1.6;color:var(--muted);margin-top:12px;overflow-wrap:anywhere}.status.error{color:var(--red)}.status.ok{color:var(--green)}.fineprint{font-size:11px;color:#9ba4b3;line-height:1.7;margin:22px 0 0}
-.app{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100dvh}.rail{position:sticky;top:0;height:100dvh;background:#fff;border-right:1px solid var(--line);padding:22px 15px;display:flex;flex-direction:column;gap:26px}.rail .brand{padding:3px 7px}.railnav{display:grid;gap:7px}.navbtn{display:flex;align-items:center;gap:11px;text-align:left;border:0;background:transparent;color:#7b869a;border-radius:13px;padding:12px 13px;font-size:12px;font-weight:700;min-height:44px}.navbtn .navicon{width:22px;height:22px;display:grid;place-items:center;font-size:17px}.navbtn.active{color:var(--blue);background:var(--blue2)}.railfoot{margin-top:auto;padding:13px;border-radius:15px;background:#f7f9fd;color:var(--muted);font-size:11px;line-height:1.8}
-.main{min-width:0;padding:26px clamp(15px,3vw,38px) 42px;max-width:1600px;width:100%;margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:25px}.mobile-brand{display:none}.top-left h1{font-size:clamp(22px,2.4vw,29px);letter-spacing:-.055em;margin:0;font-weight:800}.top-left p{margin:7px 0 0;font-size:12px;color:var(--muted);line-height:1.6}.top-actions{display:flex;align-items:center;gap:8px}.session-pill{display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--line);background:#fff;border-radius:99px;font-size:11px;color:#718096;white-space:nowrap}.session-dot{width:7px;height:7px;border-radius:50%;background:#3ab98a;box-shadow:0 0 0 3px #dff8ee}
-.section{display:none}.section.active{display:block}.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 13px}.section-head h2{font-size:14px;margin:0;letter-spacing:-.02em}.section-head p{font-size:11px;margin:4px 0 0;color:var(--muted)}
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.stat{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);min-width:0}.stat-top{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.staticon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--blue2);color:var(--blue);font-weight:800}.stat:nth-child(2) .staticon{background:#e4f8ef;color:var(--green)}.stat:nth-child(3) .staticon{background:#fff3df;color:var(--orange)}.stat:nth-child(4) .staticon{background:#f4eaff;color:#8651c5}.statnum{font-size:clamp(23px,3vw,32px);font-weight:800;letter-spacing:-.06em;margin-top:12px;line-height:1.1}.statfoot{font-size:10px;color:#9aa4b4;margin-top:9px;line-height:1.55}
-.panel{background:var(--paper);border:1px solid var(--line);border-radius:19px;box-shadow:var(--shadow);min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 19px;border-bottom:1px solid var(--line)}.panel-title{font-size:13px;font-weight:800}.panel-sub{font-size:11px;color:var(--muted);margin-top:4px}.panel-body{padding:17px 19px}
-.appstats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.appstat{border:1px solid var(--line);border-radius:16px;padding:16px;background:linear-gradient(140deg,#fff,#fafbff)}.appname{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800}.tag{font-size:10px;border-radius:100px;padding:5px 8px;background:var(--blue2);color:var(--blue);white-space:nowrap}.tag.learning{background:#e4f8ee;color:var(--green)}.appnums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}.appnums b{display:block;font-size:20px;letter-spacing:-.04em}.appnums span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.warning{margin-top:15px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;border:1px solid #f5e6c9;border-radius:14px;background:#fffbf2}.warning strong{display:block;font-size:12px}.warning p{font-size:11px;line-height:1.6;color:#977548;margin:4px 0 0}
-.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:14px;border-bottom:1px solid var(--line)}.searchbox{flex:1 1 210px;position:relative;min-width:0}.searchbox input{min-height:40px;border-radius:12px;padding-left:37px;font-size:12px;background:#fbfcfe}.searchsymbol{position:absolute;left:13px;top:11px;color:#9aa5b5;font-size:15px}.select{width:auto;min-height:40px;min-width:126px;max-width:100%;font-size:12px;background:#fbfcfe;padding:8px 32px 8px 11px}
-.toolbar-meta{font-size:11px;color:var(--muted);padding:12px 16px 0}.list{display:grid;gap:0}.record{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:start;padding:16px 18px;border-bottom:1px solid #f0f2f7}.record:last-child{border-bottom:0}.check{width:17px;height:17px;margin-top:3px;accent-color:var(--blue)}.record-main{min-width:0}.record-title{font-size:13px;font-weight:780;line-height:1.45;overflow-wrap:anywhere}.record-meta{display:flex;flex-wrap:wrap;gap:7px 12px;margin-top:8px;font-size:10px;color:var(--muted);line-height:1.6}.record-meta .uid{font-family:ui-monospace,monospace;color:#7f8ca1}.record-actions{display:flex;align-items:center;gap:6px}.record-actions .btn{min-height:33px;padding:7px 10px;font-size:11px}.empty{padding:46px 20px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8}.emptyicon{display:block;font-size:25px;margin-bottom:9px;color:#b6c0d0}
-.pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 17px;border-top:1px solid var(--line)}.pagetext{font-size:11px;color:var(--muted)}.pagebtns{display:flex;gap:7px}
-.userrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:16px 18px;border-bottom:1px solid #f0f2f7;align-items:center}.userrow:last-child{border-bottom:0}.user-id{font-family:ui-monospace,monospace;font-size:11px;overflow-wrap:anywhere;color:#465575}.user-detail{font-size:10px;color:var(--muted);margin-top:7px;line-height:1.6}.user-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-.audit-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid #f0f2f7}.audit-row:last-child{border-bottom:0}.audit-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:11px;background:#edf1ff;color:var(--blue);font-size:15px}.audit-title{font-size:12px;font-weight:800}.audit-meta{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.65;overflow-wrap:anywhere}.audit-count{font-size:14px;font-weight:800;color:#52627c;white-space:nowrap}
-.detail-backdrop{position:fixed;inset:0;background:rgba(25,37,63,.34);z-index:30;display:flex;justify-content:flex-end;backdrop-filter:blur(3px)}.detail-drawer{height:100dvh;width:min(760px,100%);background:#f7f8fc;overflow:auto;box-shadow:-18px 0 60px #1a27401a;display:flex;flex-direction:column}.detail-head{position:sticky;top:0;z-index:2;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:16px 19px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.detail-head h2{font-size:15px;line-height:1.5;margin:0;overflow-wrap:anywhere}.detail-head p{font-size:10px;color:var(--muted);line-height:1.7;margin:5px 0 0;overflow-wrap:anywhere}.messages{display:grid;gap:12px;padding:17px}.message{border:1px solid var(--line);border-radius:16px;padding:13px 14px;background:#fff;min-width:0}.message.user{border-color:#dfe5ff;background:#fdfdff}.message.assistant{background:#fff}.message.system{border-color:#f4e6c9;background:#fffcf6}.message-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);margin-bottom:9px}.message-role{font-weight:800;color:#52627c}.message-content{font-size:12px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}.detail-foot{padding:0 17px 24px;display:flex;justify-content:space-between;gap:10px}.toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);z-index:70;background:#202d44;color:#fff;border-radius:13px;padding:12px 16px;font-size:12px;box-shadow:0 10px 36px #13203a30;max-width:calc(100vw - 32px);text-align:center}
-.loadingline{height:3px;background:#edf0fb;overflow:hidden;border-radius:10px}.loadingline:after{content:"";display:block;width:33%;height:100%;background:linear-gradient(90deg,#7e93ff,#4c69ed,#8cdebd);animation:load 1.15s ease-in-out infinite}@keyframes load{from{transform:translateX(-120%)}to{transform:translateX(320%)}}
-@media(max-width:1050px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.app{grid-template-columns:190px minmax(0,1fr)}.rail{padding:19px 11px}.appnums b{font-size:18px}}
-@media(max-width:720px){.audit-row{grid-template-columns:30px minmax(0,1fr) auto;gap:8px;padding:13px 11px}.audit-icon{width:28px;height:28px}.app{display:block;padding-bottom:calc(74px + env(safe-area-inset-bottom))}.rail{position:fixed;z-index:20;inset:auto 0 0;height:auto;width:100%;border-right:0;border-top:1px solid var(--line);padding:7px 7px calc(7px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);backdrop-filter:blur(16px)}.rail .brand,.railfoot{display:none}.railnav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.navbtn{min-height:54px;justify-content:center;flex-direction:column;gap:3px;padding:5px 3px;border-radius:12px;font-size:10px}.navbtn .navicon{font-size:16px;width:20px;height:20px}.main{padding:18px 13px 28px}.topbar{align-items:flex-start;margin-bottom:20px}.top-left h1{font-size:22px}.top-left p{font-size:11px;margin-top:5px}.top-actions{gap:5px}.session-pill{font-size:0;padding:9px}.session-dot{width:8px;height:8px}.top-actions .btn{min-height:35px;padding:7px 9px;font-size:10px}.stats{gap:9px}.stat{padding:14px;border-radius:15px}.stat-top{font-size:10px;gap:4px}.staticon{width:27px;height:27px;font-size:13px}.statnum{font-size:26px;margin-top:10px}.statfoot{font-size:9px;margin-top:6px}.appstats{grid-template-columns:1fr;gap:9px}.appstat{padding:14px}.appnums{margin-top:12px}.section-head{margin-top:19px}.panel-head{padding:15px}.panel-body{padding:13px}.toolbar{padding:11px;gap:7px}.searchbox{flex:1 1 100%}.select{flex:1;min-width:0}.record{grid-template-columns:21px minmax(0,1fr);gap:9px;padding:14px 12px}.record-actions{grid-column:2;justify-content:flex-start;margin-top:-2px}.record-title{font-size:12px}.record-meta{gap:5px 9px}.record-actions .btn{min-height:32px}.pagination{padding:12px}.warning{align-items:flex-start;flex-direction:column}.warning .btn{width:100%}.userrow{grid-template-columns:minmax(0,1fr);padding:14px 12px}.user-actions{justify-content:flex-start}.detail-drawer{width:100%}.detail-head{padding:14px}.messages{padding:11px;gap:9px}.detail-foot{padding:0 11px 18px}.message{padding:12px}.message-content{font-size:12px}.login-card{border-radius:22px}.login-title{font-size:25px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+:root{color-scheme:light;font-family:"OPPO Sans 4.0","MiSans","PingFang SC",system-ui,sans-serif;color:#1e2b43;background:#f5f7fb}*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:20px}.redirect{width:min(100%,440px);padding:28px;border:1px solid #e5eaf2;border-radius:24px;background:#fff;box-shadow:0 18px 48px #22355c0d}.logo{width:44px;height:44px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(140deg,#758bff,#4c69ed);color:#fff;font-weight:800}.title{font-size:21px;margin:18px 0 8px;letter-spacing:-.04em}.copy{font-size:13px;color:#7e899d;line-height:1.8}.link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:12px;padding:0 16px;border-radius:12px;background:#4c69ed;color:white;text-decoration:none;font-size:12px;font-weight:700}
 </style>
 </head>
 <body>
-<div id="loginView" class="login-shell">
-  <section class="login-card">
-    <div class="brand"><div class="brandmark">知</div><div><div class="brandtitle">知行AI</div><div class="brandhint">CLOUD DATA CENTER</div></div></div>
-    <div class="kicker">ADMINISTRATION · PRIVATE</div>
-    <h1 class="login-title">云端数据中心</h1>
-    <p class="login-copy">集中管理知行AI与学习版的云端会话、文字消息和保留期限。管理员身份仅由后端验证。</p>
-    <form id="loginForm">
-      <div class="field"><label for="password">管理员密码</label><input id="password" type="password" autocomplete="current-password" required minlength="1" placeholder="输入 Worker 管理密码"></div>
-      <button class="btn primary full" id="loginButton" type="submit">安全登录 <span aria-hidden="true">↗</span></button>
-    </form>
-    <div id="loginStatus" class="status" role="status" aria-live="polite"></div>
-    <p class="fineprint">管理令牌仅保存在当前标签页会话中。此页面不会直接连接数据库，也不会保存服务角色密钥。</p>
-  </section>
-</div>
-<div id="appView" class="app hidden">
-  <aside class="rail">
-    <div class="brand"><div class="brandmark">知</div><div><div class="brandtitle">知行AI</div><div class="brandhint">CLOUD CONSOLE</div></div></div>
-    <nav class="railnav" aria-label="管理导航">
-      <button class="navbtn active" data-view="overview" type="button"><span class="navicon">◫</span>数据概览</button>
-      <button class="navbtn" data-view="conversations" type="button"><span class="navicon">▤</span>会话记录</button>
-      <button class="navbtn" data-view="users" type="button"><span class="navicon">♙</span>用户列表</button>
-      <button class="navbtn" data-view="audit" type="button"><span class="navicon">◷</span>操作日志</button>
-    </nav>
-    <div class="railfoot">安全管理模式<br>知行AI与学习版的数据互相隔离<br><span id="expireNote">管理会话有效期约 2 小时</span></div>
-  </aside>
-  <main class="main">
-    <header class="topbar">
-      <div class="top-left"><h1 id="pageTitle">数据概览</h1><p id="pageSubtitle">了解云端会话、消息与清理状态。</p></div>
-      <div class="top-actions"><span class="session-pill"><span class="session-dot"></span> 已安全连接</span><button class="btn" id="refreshButton" type="button">↻ 刷新</button><button class="btn" id="logoutButton" type="button">退出</button></div>
-    </header>
-    <section class="section active" id="view-overview">
-      <div id="overviewLoading" class="loadingline"></div>
-      <div class="stats" id="overviewStats"></div>
-      <div class="section-head"><div><h2>产品空间</h2><p>各产品分开统计，不混合会话记录。</p></div><button class="btn soft" data-go="conversations" type="button">查看会话 ↗</button></div>
-      <div id="appStats" class="appstats"></div>
-      <div id="cleanupWarning" class="warning hidden"><div><strong>存在超过 90 天未活跃的会话</strong><p id="cleanupText">可立即执行与自动保留策略一致的清理操作。</p></div><button class="btn danger" id="cleanupButton" type="button">清理过期会话</button></div>
-      <div class="section-head"><div><h2>管理提示</h2><p>需要用户详情时，使用用户 UUID 定位；此页不会读取邮箱。</p></div></div>
-      <div class="panel"><div class="panel-body" style="font-size:12px;line-height:1.9;color:#778399">删除会话会同时删除其文字消息，且不可撤销。批量删除一次最多 100 条。自动清理由 Worker 定时执行；这里的手动清理调用数据库中已配置的 90 天清理函数。</div></div>
-    </section>
-    <section class="section" id="view-conversations">
-      <div class="panel">
-        <div class="panel-head"><div><div class="panel-title">云端会话</div><div class="panel-sub" id="conversationSub">选择产品后查看会话与文字消息。</div></div><button class="btn" id="clearSelectionButton" type="button">取消选择</button></div>
-        <div class="toolbar">
-          <div class="searchbox"><span class="searchsymbol">⌕</span><input id="searchInput" type="search" placeholder="搜索会话标题" autocomplete="off" aria-label="搜索会话标题"></div>
-          <select id="appFilter" class="select" aria-label="筛选产品"><option value="zhixing-ai">知行AI</option><option value="learning">学习版</option></select>
-          <button class="btn primary" id="searchButton" type="button">查询</button>
-        </div>
-        <div class="toolbar" style="border-bottom:0;padding-top:0"><label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)"><input id="selectAll" type="checkbox" class="check">选中本页</label><button class="btn danger" id="bulkDeleteButton" type="button" disabled>删除所选 <span id="selectedCount">0</span></button><span id="listStatus" class="status" style="margin:0 0 0 auto"></span></div>
-        <div id="conversationLoading" class="loadingline hidden"></div>
-        <div class="list" id="conversationList"><div class="empty"><span class="emptyicon">▤</span>登录后加载会话</div></div>
-        <div class="pagination"><span id="pageInfo" class="pagetext">第 1 页</span><div class="pagebtns"><button class="btn" id="prevPage" type="button">上一页</button><button class="btn" id="nextPage" type="button">下一页</button></div></div>
-      </div>
-    </section>
-    <section class="section" id="view-users">
-      <div class="panel">
-        <div class="panel-head"><div><div class="panel-title">用户列表</div><div class="panel-sub">按会话记录聚合的 Supabase 用户 UUID，不读取用户邮箱。</div></div><button class="btn" id="loadUsersButton" type="button">更新列表</button></div>
-        <div class="toolbar"><div class="searchbox"><span class="searchsymbol">⌕</span><input id="userSearch" type="search" placeholder="输入完整用户 UUID 定位" autocomplete="off" aria-label="搜索用户 UUID"></div><select id="userAppFilter" class="select" aria-label="用户产品范围"><option value="all">全部产品</option><option value="zhixing-ai">知行AI</option><option value="learning">学习版</option></select><button class="btn primary" id="userSearchButton" type="button">查询</button></div>
-        <div id="userListStatus" class="toolbar-meta"></div>
-        <div class="list" id="userList"><div class="empty"><span class="emptyicon">♙</span>点击更新列表查看有云端会话的用户</div></div>
-      </div>
-    </section>
-    <section class="section" id="view-audit">
-      <div class="panel">
-        <div class="panel-head"><div><div class="panel-title">操作日志</div><div class="panel-sub">仅记录操作类型、产品、影响数量与时间，不保存聊天正文；最多保留最近 200 条。</div></div><button class="btn" id="loadAuditButton" type="button">更新日志</button></div>
-        <div id="auditStatus" class="toolbar-meta">尚未加载</div>
-        <div id="auditList" class="list"><div class="empty"><span class="emptyicon">◷</span>点击更新日志查看最近管理操作</div></div>
-      </div>
-    </section>
-  </main>
-</div>
-<div id="detailBackdrop" class="detail-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-  <section class="detail-drawer">
-    <header class="detail-head"><div><h2 id="detailTitle">会话详情</h2><p id="detailMeta"></p></div><button id="closeDetail" class="btn" type="button" aria-label="关闭详情">✕</button></header>
-    <div id="detailStatus" class="toolbar-meta"></div>
-    <div id="messageList" class="messages"></div>
-    <div class="detail-foot"><button id="olderMessages" class="btn" type="button">加载更早 / 更多消息</button><button id="deleteCurrent" class="btn danger" type="button">删除会话</button></div>
-  </section>
-</div>
-<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-<script src="/cloud-admin.js?v=20261022-1"></script>
+<main class="redirect">
+<div class="logo">知</div>
+<h1 class="title">管理后台已整合</h1>
+<p class="copy">云端聊天记录、账号管理、模型连接与提示词现已使用同一个管理入口。正在跳转；如未自动打开，请点击下方按钮。</p>
+<a class="link" href="/ai-admin.html?view=cloud">打开统一管理中心</a>
+</main>
+<script src="/cloud-admin.js?v=redirect-1"></script>
 </body>
 </html>
