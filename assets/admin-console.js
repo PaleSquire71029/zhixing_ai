@@ -168,7 +168,7 @@ function cloudRenderConversations(){
  $("cloudConversationList").innerHTML=rows.map(function(row){return '<article class="cloud-record"><input type="checkbox" data-cloud-select="'+cloudEsc(row.id)+'" aria-label="选择会话" '+(cloudState.selected.has(row.id)?"checked":"")+'><div class="cloud-record-main"><div class="cloud-record-title">'+cloudEsc(row.title||"未命名对话")+'</div><div class="cloud-record-meta"><span>'+cloudEsc(row.app_id==="learning"?"学习版":"知行AI")+'</span><span>'+cloudNum(row.message_count)+' 条消息</span><span>'+cloudEsc(cloudTime(row.last_activity_at))+'</span><span class="cloud-userid" title="'+cloudEsc(row.user_id)+'">用户 '+cloudEsc(row.user_id?row.user_id.slice(0,8)+"…"+row.user_id.slice(-5):"—")+'</span></div><div class="cloud-record-meta"><span class="cloud-userid" title="'+cloudEsc(row.id)+'">会话 '+cloudEsc(row.id?row.id.slice(0,8)+"…"+row.id.slice(-5):"—")+'</span></div></div><div class="cloud-record-actions"><button class="btn small" type="button" data-cloud-open="'+cloudEsc(row.id)+'">查看</button><button class="btn small danger" type="button" data-cloud-delete="'+cloudEsc(row.id)+'">删除</button></div></article>'}).join("");
 }
 function cloudUpdateSelected(){$("cloudSelectedCount").textContent=cloudState.selected.size;$("cloudBulkDelete").disabled=!cloudState.selected.size}
-async async function cloudDelete(ids,app){
+async function cloudDelete(ids,app){
  if(!ids.length)return;
  var groups=[];
  if(app==="all"){
