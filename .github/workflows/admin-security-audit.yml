@@ -59,7 +59,17 @@ jobs:
           assert.doesNotMatch(js, /localStorage\.setItem\([^)]*(?:token|TOKEN_KEY)/i);
           assert.match(readFileSync("cloud-admin.html", "utf8"), /ai-admin\.html\?view=cloud/);
           assert.match(readFileSync("cloud-admin.js", "utf8"), /location\.replace\("\/ai-admin\.html\?view=cloud"\)/);
-          console.log("Unified admin cloud module, account registration guardrails, session storage, and secret isolation passed.");
+          assert.match(html, /id="userLoginForm"/, "End users must have a separate login form.");
+          assert.match(html, /id="userPortal"/, "End users must land in a self-service-only portal.");
+          assert.match(html, /id="userPasswordForm"/, "End users must have a password-management form.");
+          assert.match(html, /\[hidden\]\{display:none!important\}/, "Hidden panels must remain hidden despite display rules.");
+          assert.match(html, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "Mobile nav should use a wrapping grid, not a horizontal scroller.");
+          assert.match(js, /async function userLogin/, "User login handler must exist.");
+          assert.match(js, /\/api\/account\/password/, "Password changes must go through the Worker.");
+          assert.match(js, /sessionStorage\.setItem\("zx-ai-user-refresh-token"/, "User refresh tokens should be session-scoped.");
+          assert.match(js, /app==="user"&&path==="\/api\/account\/password"/, "Wrong-current-password errors must not be mistaken for expired sessions.");
+          assert.match(js, /userProfileIp/, "The self-service page must show only the current account's registration IP.");
+          console.log("Unified admin, end-user isolation, login session handling, responsive navigation, and secret isolation passed.");
           NODE
       - name: Verify CSP and secret-handling invariants
         run: |
