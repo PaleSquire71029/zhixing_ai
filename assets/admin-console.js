@@ -271,6 +271,13 @@ function money(v){var n=Number(v);return Number.isFinite(n)?"$"+n.toFixed(4):"�
 async function balanceCheck(btn){busy(btn,true,"查询中…");note("balanceNotice","正在查询 A6API 额度接口…","info");try{var s=settings(),d=await api(activeApp,"/admin/balance",{method:"POST",body:{apiBaseUrl:$("apiBase").value.trim()||s.apiBaseUrl,apiKey:$("apiKey").value.trim()}}),items=$("balanceView").children;if(d.unlimited){items[0].querySelector("strong").textContent="不限额";items[1].querySelector("strong").textContent="—";items[2].querySelector("strong").textContent="不限额";items[2].querySelector("small").textContent=d.name||"无限额度"}else{items[0].querySelector("strong").textContent=money(d.availableUsd);items[1].querySelector("strong").textContent=money(d.usedUsd);items[2].querySelector("strong").textContent=fmt(d.totalAvailable);items[0].querySelector("small").textContent="可用金额";items[1].querySelector("small").textContent="已用金额";items[2].querySelector("small").textContent="剩余计费单位"}note("balanceNotice","额度查询成功。"+(d.expiresAt?" 到期："+new Date(d.expiresAt*1000).toLocaleString():""),"ok")}catch(e){note("balanceNotice",e.message,"bad")}finally{busy(btn,false)}}
 async function resetStats(btn){if(!confirm("确定清空"+appName(activeApp)+"的统计与最近请求记录？不可撤销。"))return;busy(btn,true,"清空中…");try{await api(activeApp,"/admin/stats/reset",{method:"POST",body:{confirm:"RESET_STATS"}});await loadScope(activeApp);note("recordsNotice","当前产品记录已清空。","ok")}catch(e){note("recordsNotice",e.message,"bad")}finally{busy(btn,false)}}
 async function refreshScope(btn){busy(btn,true,"刷新中…");try{await loadScope(activeApp);toast("当前产品已刷新")}catch(e){note("securityNotice",e.message,"bad")}finally{busy(btn,false)}}
+// Delegated login-mode handler: still works if other page initialization fails later.
+document.addEventListener("click",function(event){
+ var button=event.target&&event.target.closest?event.target.closest("[data-login-mode]"):null;
+ if(!button)return;
+ event.preventDefault();
+ setLoginMode(button.dataset.loginMode==="user"?"user":"admin");
+},true);
 document.addEventListener("DOMContentLoaded",function(){
  $("loginForm").addEventListener("submit",login);$("logoutTop").addEventListener("click",logoutAll);$("logoutAll").addEventListener("click",logoutAll);
  document.querySelectorAll("[data-login-mode]").forEach(function(b){b.addEventListener("click",function(){setLoginMode(b.dataset.loginMode)})});
