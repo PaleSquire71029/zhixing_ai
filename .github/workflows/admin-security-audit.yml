@@ -8,6 +8,7 @@ on:
       - "assets/account-auth.js"
       - "account-documents.html"
       - "assets/admin-console.js"
+      - "cloud-history.js"
       - "cloud-admin.html"
       - "cloud-admin.js"
       - ".github/workflows/admin-security-audit.yml"
@@ -17,6 +18,7 @@ on:
       - "assets/account-auth.js"
       - "account-documents.html"
       - "assets/admin-console.js"
+      - "cloud-history.js"
       - "cloud-admin.html"
       - "cloud-admin.js"
       - ".github/workflows/admin-security-audit.yml"
@@ -47,6 +49,7 @@ jobs:
           const html = readFileSync("ai-admin.html", "utf8");
           const js = readFileSync("assets/admin-console.js", "utf8");
           const account = readFileSync("assets/account-auth.js", "utf8");
+          const history = readFileSync("cloud-history.js", "utf8");
           const policy = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/i)?.[1] || "";
           const scriptSrc = policy.split(";").map(part => part.trim()).find(part => part.startsWith("script-src "));
           assert.match(scriptSrc || "", /script-src 'self'/);
@@ -84,9 +87,11 @@ jobs:
           assert.match(readFileSync("cloud-admin.js", "utf8"), /location\.replace\("\/ai-admin\.html\?view=cloud"\)/);
           assert.doesNotMatch(html, /id="userLoginForm"|id="userPortal"|id="userPasswordForm"|data-login-mode="user"/, "Legacy end-user panels must be removed from admin page.");
           assert.match(html, /id="adminLoginPanel"/, "Admin page must retain separate administrator login.");
-          assert.match(html, /account-auth\.js\?v=20261023-account-auth-4/, "Unified account modal must load in admin page.");
+          assert.match(html, /account-auth\.js\?v=20261023-account-auth-5/, "Unified account modal must load in admin page.");
           assert.match(account, /\/api\/account\/login/, "Shared modal must use account login API.");
           assert.match(account, /\/api\/account\/password/, "Password changes must use protected Worker API.");
+          assert.match(account, /syncCloudAuth/, "Shared login must synchronize the Supabase history session.");
+          assert.match(history, /async function syncAuth\(session\)/, "Cloud history must accept auth from the shared account modal.");
           assert.match(account, /zx-account-password-form/, "Password management must be in the shared modal.");
           assert.match(account, /zx-account-consent/, "Shared modal must include consent.");
           assert.match(account, /credentials:"include"/, "Shared account requests must include session cookies.");
