@@ -126,11 +126,12 @@ async function saveMessage(conversation, role, content, id) {
 }
 async function refreshAuth() {
   if (!client) { status('登录组件加载失败，请检查网络。'); return; }
-  const result = await client.auth.getSession(), user = result.data.session?.user || null;
-  $('cloudAuthForm').hidden = !!user; $('cloudSignedIn').hidden = !user;
-  $('cloudEmailLabel').textContent = user?.email || '';
-  if (user) { try { await refreshHistory(false); status('已登录 · 云对话会在回答后自动保存。'); } catch (e) { status('已登录，但云历史暂不可用：' + e.message); } }
-  else {
+  const result = await client.auth.getSession();
+  const user = result.data.session?.user || null;
+  if (user) {
+    try { await refreshHistory(false); status('已登录 · 云对话会在回答后自动保存。'); }
+    catch (error) { status('已登录，但云历史暂不可用：' + (error.message || '请稍后重试。')); }
+  } else {
     cloudItems.clear();
     const app = window.zxAIApp;
     if (app) {
@@ -139,27 +140,21 @@ async function refreshAuth() {
       if (!app.state.conversations.some(c => c.id === app.state.currentId)) { app.state.currentId = null; app.showConversation(); }
       app.populateHistory();
     }
-    status('登录后可同步知行AI的文字对话；与学习版历史分开保存。');
+    status('登录后可同步知行AI文字对话；请使用页面统一账号窗口登录。');
   }
 }
-async function auth(mode) {
-  const email = $('cloudEmail').value.trim(), password = $('cloudPassword').value;
-  if (!email || !password) { status('请输入邮箱和密码。'); return; }
-  if (password.length < 8) { status('密码至少需要 8 位。'); return; }
-  $('cloudLogin').disabled = $('cloudRegister').disabled = true;
-  try {
-    const result = mode === 'signup' ? await client.auth.signUp({ email, password }) : await client.auth.signInWithPassword({ email, password });
+async function syncAuth(session) {
+  if (!client) throw new Error('登录组件加载失败，请检查网络。');
+  if (session?.access_token && session?.refresh_token) {
+    const result = await client.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
     if (result.error) throw result.error;
-    if (mode === 'signup' && !result.data.session) { status('注册已提交，请先打开邮箱完成验证，再回来登录。'); return; }
-    await refreshAuth();
-  } catch (e) { status('账号操作失败：' + (e.message || '请检查邮箱、密码或邮件验证设置。')); }
-  finally { $('cloudLogin').disabled = $('cloudRegister').disabled = false; }
+  } else {
+    const result = await client.auth.signOut();
+    if (result.error) throw result.error;
+  }
+  await refreshAuth();
 }
-$('cloudLogin').addEventListener('click', () => auth('signin'));
-$('cloudRegister').addEventListener('click', () => auth('signup'));
-$('cloudLogout').addEventListener('click', async () => { await client?.auth.signOut(); await refreshAuth(); });
-$('cloudRefresh').addEventListener('click', () => refreshHistory());
 if (client) client.auth.onAuthStateChange(() => setTimeout(refreshAuth, 0));
-window.zxCloudHistory = { messageId: uuid, saveMessage, refresh: refreshHistory, open: openById, delete: deleteCloud };
+window.zxCloudHistory = { messageId: uuid, saveMessage, refresh: refreshHistory, open: openById, delete: deleteCloud, syncAuth };
 refreshAuth();
 })();
