@@ -235,6 +235,17 @@ async function cloudSetUsername(account){
  try{var data=await cloudApi("/admin/cloud/accounts/username",{method:"POST",body:{user_id:account.id,username:desired}});toast(data.username?"用户名已保存。":"已清除用户名。");await loadCloudAccounts()}
  catch(e){note("cloudCreateAccountNotice",e.message||"用户名设置失败。","bad")}
 }
+async function cloudSetVerification(account){
+ if(!account||!account.id)return;
+ var next=account.verified!==true;
+ var promptText=next?"确认将该账号标记为已认证？认证账号登录后可不受游客 IP/设备对话次数限制。":"确认撤销该账号的认证？撤销后，该账号登录时将重新受到游客对话次数限制。";
+ if(!window.confirm(promptText))return;
+ try{
+  var data=await cloudApi("/admin/cloud/accounts/verification",{method:"POST",body:{user_id:account.id,verified:next}});
+  toast(data.verified?"账号认证已开启。":"已撤销账号认证。");
+  await loadCloudAccounts();
+ }catch(e){note("cloudCreateAccountNotice",e.message||"账号认证状态保存失败。","bad")}
+}
 async function loadCloudAccounts(){
  $("cloudAccountList").innerHTML='<div class="empty-state">正在加载账号目录…</div>';
  try{var params=new URLSearchParams({page:String(cloudState.accountPage),per_page:"20"}),data=await cloudApi("/admin/cloud/accounts?"+params.toString());cloudState.accounts=data.users||[];cloudState.accountHasMore=!!data.hasMore;cloudRenderAccounts();$("cloudAccountPageInfo").textContent="第 "+cloudState.accountPage+" 页";$("cloudAccountPageLabel").textContent="第 "+cloudState.accountPage+" 页";$("cloudAccountPrev").disabled=cloudState.accountPage<=1;$("cloudAccountNext").disabled=!cloudState.accountHasMore}
@@ -245,7 +256,7 @@ function cloudRenderAccounts(){
  if(!rows.length){$("cloudAccountList").innerHTML='<div class="empty-state">'+(q?"当前页没有匹配邮箱。":"暂无账号，或该页没有记录。")+'</div>';return}
  $("cloudAccountList").innerHTML=rows.map(function(user){
   var confirmed=!!user.email_confirmed_at,reg=user.registration||{},loc=[reg.city,reg.region,cloudCountry(reg.countryCode||reg.country)].filter(Boolean).join(" · ")||"未知归属地";
-  return '<article class="cloud-account-card"><div class="cloud-account-top"><div class="cloud-account-email">'+cloudEsc(user.username?user.username+" · "+(user.email||"无邮箱"):(user.email||"无邮箱"))+'</div><span class="cloud-account-state '+(confirmed?"":"pending")+'">'+(confirmed?"邮箱已确认":"未确认")+'</span></div><div class="cloud-account-meta">用户名：'+cloudEsc(user.username||"未设置")+'<br>用户 ID：<span class="cloud-userid">'+cloudEsc(user.id)+'</span><br>创建时间：'+cloudEsc(cloudTime(user.created_at))+'<br>最近登录：'+cloudEsc(cloudTime(user.last_sign_in_at))+'<br>注册 IP：'+cloudEsc(reg.ip||"未记录")+'<br>IP 归属地：'+cloudEsc(loc)+'<br>记录来源：'+cloudEsc(reg.source==="admin-created"?"管理员创建":reg.source||"未记录")+'</div><div class="actions cloud-account-actions" style="margin-top:10px"><button class="btn small" type="button" data-cloud-account-username="'+cloudEsc(user.id)+'">设置用户名</button><button class="btn small" type="button" data-cloud-account-chats="'+cloudEsc(user.id)+'">查看云端对话</button><button class="btn small danger" type="button" data-cloud-account-delete="'+cloudEsc(user.id)+'">注销账号</button></div></article>';
+  return '<article class="cloud-account-card"><div class="cloud-account-top"><div class="cloud-account-email">'+cloudEsc(user.username?user.username+" · "+(user.email||"无邮箱"):(user.email||"无邮箱"))+'</div><span class="cloud-account-state '+(confirmed?"":"pending")+'">'+(confirmed?"邮箱已确认":"未确认")+'</span></div><div class="cloud-account-meta">用户名：'+cloudEsc(user.username||"未设置")+'<br>账号认证：'+(user.verified?'已认证（免游客次数限制）':'未认证')+'<br>用户 ID：<span class="cloud-userid">'+cloudEsc(user.id)+'</span><br>创建时间：'+cloudEsc(cloudTime(user.created_at))+'<br>最近登录：'+cloudEsc(cloudTime(user.last_sign_in_at))+'<br>注册 IP：'+cloudEsc(reg.ip||"未记录")+'<br>IP 归属地：'+cloudEsc(loc)+'<br>记录来源：'+cloudEsc(reg.source==="admin-created"?"管理员创建":reg.source||"未记录")+'</div><div class="actions cloud-account-actions" style="margin-top:10px"><button class="btn small" type="button" data-cloud-account-username="'+cloudEsc(user.id)+'">设置用户名</button><button class="btn small" type="button" data-cloud-account-verification="'+cloudEsc(user.id)+'">'+(user.verified?'取消认证':'管理员认证')+'</button><button class="btn small" type="button" data-cloud-account-chats="'+cloudEsc(user.id)+'">查看云端对话</button><button class="btn small danger" type="button" data-cloud-account-delete="'+cloudEsc(user.id)+'">注销账号</button></div></article>';
  }).join("")
 }
 async function cloudCreateAccount(ev){
@@ -400,14 +411,14 @@ document.addEventListener("DOMContentLoaded",function(){
  $("cloudMoreMessages").addEventListener("click",function(){cloudLoadMessages(false)});
  $("cloudDeleteCurrent").addEventListener("click",function(){if(cloudState.activeRow)cloudDelete([cloudState.activeRow.id],cloudState.activeRow.app_id)});
  document.addEventListener("click",function(e){
-  var t=e.target.closest("[data-cloud-open-app],[data-cloud-open],[data-cloud-delete],[data-cloud-open-user],[data-cloud-delete-user],[data-cloud-account-chats],[data-cloud-account-delete],[data-cloud-account-username]");
+  var t=e.target.closest("[data-cloud-open-app],[data-cloud-open],[data-cloud-delete],[data-cloud-open-user],[data-cloud-delete-user],[data-cloud-account-chats],[data-cloud-account-delete],[data-cloud-account-username],[data-cloud-account-verification]");
   if(!t)return;
   if(t.dataset.cloudOpenApp){$("cloudConversationApp").value=t.dataset.cloudOpenApp;cloudState.page=1;delete $("cloudConversationSearch").dataset.userId;cloudTab("conversations");loadCloudConversations();return}
   if(t.dataset.cloudOpen){cloudOpenConversation(t.dataset.cloudOpen);return}
   if(t.dataset.cloudDelete){var row=cloudState.rows.find(function(x){return x.id===t.dataset.cloudDelete});if(row)cloudDelete([row.id],row.app_id);return}
   if(t.dataset.cloudOpenUser){cloudFilterUser(t.dataset.cloudOpenUser,t.dataset.cloudUserApp||"zhixing-ai");return}
   if(t.dataset.cloudDeleteUser){cloudDeleteUser(t.dataset.cloudDeleteUser);return}
-  if(t.dataset.cloudAccountUsername){var accountForUsername=cloudState.accounts.find(function(u){return u.id===t.dataset.cloudAccountUsername});if(accountForUsername)cloudSetUsername(accountForUsername);return}if(t.dataset.cloudAccountChats){cloudFilterUser(t.dataset.cloudAccountChats,"all");return}
+  if(t.dataset.cloudAccountVerification){var verifiedAccount=cloudState.accounts.find(function(u){return u.id===t.dataset.cloudAccountVerification});if(verifiedAccount)cloudSetVerification(verifiedAccount);return}if(t.dataset.cloudAccountUsername){var accountForUsername=cloudState.accounts.find(function(u){return u.id===t.dataset.cloudAccountUsername});if(accountForUsername)cloudSetUsername(accountForUsername);return}if(t.dataset.cloudAccountChats){cloudFilterUser(t.dataset.cloudAccountChats,"all");return}
   if(t.dataset.cloudAccountDelete){var account=cloudState.accounts.find(function(u){return u.id===t.dataset.cloudAccountDelete});if(account)cloudDeleteAccount(account);return}
  });
  document.addEventListener("change",function(e){var t=e.target.closest("[data-cloud-select]");if(!t)return;if(t.checked)cloudState.selected.add(t.dataset.cloudSelect);else cloudState.selected.delete(t.dataset.cloudSelect);cloudUpdateSelected();$("cloudSelectAll").checked=cloudState.rows.length>0&&cloudState.rows.every(function(row){return cloudState.selected.has(row.id)})});
