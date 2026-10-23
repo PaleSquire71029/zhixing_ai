@@ -19,7 +19,7 @@ async function health(app){try{return {ok:true,data:await api(app,"/health",{noA
 function headerState(){var n=APPS.filter(function(a){return !!tokens[a.id]}).length,e=$("headerState");e.textContent=n===2&&tokens.cloud?"全部模块已登录":n===2?"请重新登录":"未登录";e.className="status-chip "+(n===2&&tokens.cloud?"good":n?"warn":"");$("logoutTop").hidden=!n&&!tokens.cloud}
 function clearUserSession(){setToken("user","");userRefreshToken="";userExpiry=0;userProfile=null;try{sessionStorage.removeItem("zx-ai-user-refresh-token");sessionStorage.removeItem("zx-ai-user-expiry")}catch(e){}}
 function clearAdminSession(){APPS.forEach(function(a){setToken(a.id,"")});setToken("cloud","");cache={"zhixing-ai":null,"learning":null};cloudState={overview:null,tab:"overview",page:1,pageSize:20,total:null,app:"zhixing-ai",rows:[],selected:new Set(),users:[],accounts:[],accountPage:1,accountHasMore:false,audit:[],activeRow:null,messageOffset:0,messageTotal:null}}
-function logoutAll(){clearAdminSession();clearUserSession();cache={"zhixing-ai":null,"learning":null};$("password").value="";$("mainHeader").hidden=false;$("app").hidden=true;$("userPortal").hidden=true;$("login").hidden=false;note("loginNotice","已退出全部管理模块。","ok");headerState()}
+function logoutAll(){clearAdminSession();clearUserSession();cache={"zhixing-ai":null,"learning":null};$("password").value="";$("mainHeader").hidden=false;$("app").hidden=true;if($("userPortal"))$("userPortal").hidden=true;$("login").hidden=false;note("loginNotice","已退出全部管理模块。","ok");headerState()}
 async function login(ev){
  ev.preventDefault();var password=$("password").value,btn=$("loginBtn");busy(btn,true,"正在验证…");note("loginNotice","");
  try{
@@ -27,7 +27,7 @@ async function login(ev){
   if(!result.tokens||!result.tokens["zhixing-ai"]||!result.tokens.learning||!result.tokens.cloud)throw new Error("后端没有返回完整的统一管理会话，请确认 Worker 已部署最新版本。");
   clearUserSession();
   APPS.forEach(function(app){setToken(app.id,result.tokens[app.id])});setToken("cloud",result.tokens.cloud);
-  $("mainHeader").hidden=false;$("userPortal").hidden=true;$("password").value="";headerState();$("login").hidden=true;$("app").hidden=false;
+  $("mainHeader").hidden=false;if($("userPortal"))$("userPortal").hidden=true;$("password").value="";headerState();$("login").hidden=true;$("app").hidden=false;
   await Promise.all(APPS.map(function(app){return loadScope(app.id)}));
   activateApp("zhixing-ai");var initialView=new URLSearchParams(location.search).get("view")==="cloud"?"cloud":"overview";activateView(initialView);toast("统一管理登录成功");
  }catch(error){
@@ -42,11 +42,7 @@ function current(){return cache[activeApp]||{}}
 function settings(){return current().settings||{apiBaseUrl:"https://api.a6api.com/v1",model:"",temperature:.2,maxTokens:0,hasApiKey:false,apiKeySource:"missing",prompts:normalizePrompts({},current().defaults),stats:{recent:[]}}}
 function activateApp(id){activeApp=id;page=1;expanded={};document.querySelectorAll("[data-app]").forEach(function(b){b.classList.toggle("active",b.dataset.app===id)});fillConfig(true);fillChoices();renderAll()}
 function activateView(view){activeView=view;document.querySelectorAll("[data-view]").forEach(function(b){b.classList.toggle("active",b.dataset.view===view)});document.querySelectorAll("[data-panel]").forEach(function(p){p.classList.toggle("active",p.dataset.panel===view)});if(view==="records")renderLogs();if(view==="prompts")fillChoices();if(view==="cloud"&&tokens.cloud){cloudTab(cloudState.tab||"overview")}window.scrollTo({top:0,behavior:"smooth"})}
-function setLoginMode(mode){
- document.querySelectorAll("[data-login-mode]").forEach(function(b){b.classList.toggle("active",b.dataset.loginMode===mode)});
- $("adminLoginPanel").hidden=mode!=="admin";$("userLoginPanel").hidden=mode!=="user";
- if(mode==="admin")$("password").focus();else $("userLoginIdentifier").focus();
-}
+function setLoginMode(){var p=$("adminLoginPanel");if(p)p.hidden=false;var field=$("password");if(field)field.focus()}
 function userSaveSession(data){
  setToken("user",data.accessToken||"");userRefreshToken=String(data.refreshToken||"");
  userExpiry=Date.now()+Math.max(60,Number(data.expiresIn)||3600)*1000;
@@ -67,7 +63,7 @@ function renderUserProfile(user){
  $("userVerified").className="status-chip "+(userProfile.emailConfirmedAt?"good":"warn");
 }
 function enterUserPortal(user){
- $("mainHeader").hidden=true;$("login").hidden=true;$("app").hidden=true;$("userPortal").hidden=false;
+ $("mainHeader").hidden=true;$("login").hidden=true;$("app").hidden=true;if($("userPortal"))$("userPortal").hidden=false;
  renderUserProfile(user);note("userProfileNotice","");headerState();
 }
 function userRequest(path,opt){
@@ -79,7 +75,7 @@ function userRequest(path,opt){
    userSaveSession(rotated);if(rotated.user)renderUserProfile(rotated.user);
    return await api("user",path,opt);
   }catch(refreshError){
-   clearUserSession();$("mainHeader").hidden=false;$("userPortal").hidden=true;$("app").hidden=true;$("login").hidden=false;setLoginMode("user");
+   clearUserSession();$("mainHeader").hidden=false;if($("userPortal"))$("userPortal").hidden=true;$("app").hidden=true;$("login").hidden=false;setLoginMode("user");
    note("userLoginNotice","登录已过期，请重新登录。","warn");throw refreshError;
   }
  });
@@ -93,12 +89,12 @@ async function userLogin(ev){
   enterUserPortal(data.user);
   var profile=await userRequest("/api/account/me");
   renderUserProfile(profile.user);
- }catch(error){clearUserSession();$("mainHeader").hidden=false;$("userPortal").hidden=true;$("app").hidden=true;$("login").hidden=false;setLoginMode("user");note("userLoginNotice",error.message||"登录失败，请检查邮箱和密码。","bad");}
+ }catch(error){clearUserSession();$("mainHeader").hidden=false;if($("userPortal"))$("userPortal").hidden=true;$("app").hidden=true;$("login").hidden=false;setLoginMode("user");note("userLoginNotice",error.message||"登录失败，请检查邮箱和密码。","bad");}
  finally{busy(btn,false)}
 }
 async function userLogout(){
  try{if(tokens.user)await userRequest("/api/account/logout",{method:"POST",body:{}})}catch(e){}
- clearUserSession();$("mainHeader").hidden=false;$("userPortal").hidden=true;$("login").hidden=false;$("app").hidden=true;setLoginMode("user");
+ clearUserSession();$("mainHeader").hidden=false;if($("userPortal"))$("userPortal").hidden=true;$("login").hidden=false;$("app").hidden=true;setLoginMode("user");
  note("userLoginNotice","已退出登录。","ok");headerState();
 }
 async function changeOwnPassword(ev){
@@ -366,9 +362,9 @@ document.addEventListener("click",function(event){
 document.addEventListener("DOMContentLoaded",function(){
  $("loginForm").addEventListener("submit",login);$("logoutTop").addEventListener("click",logoutAll);$("logoutAll").addEventListener("click",logoutAll);
  document.querySelectorAll("[data-login-mode]").forEach(function(b){b.addEventListener("click",function(){setLoginMode(b.dataset.loginMode)})});
- $("userLoginForm").addEventListener("submit",userLogin);$("userLogout").addEventListener("click",userLogout);
- $("userPasswordForm").addEventListener("submit",changeOwnPassword);
- $("userPasswordClear").addEventListener("click",function(){$("userCurrentPassword").value="";$("userNewPassword").value="";$("userConfirmPassword").value="";note("userPasswordNotice","")});
+ if($("userLoginForm"))$("userLoginForm").addEventListener("submit",userLogin);if($("userLogout"))$("userLogout").addEventListener("click",userLogout);
+ if($("userPasswordForm"))$("userPasswordForm").addEventListener("submit",changeOwnPassword);
+ if($("userPasswordClear"))$("userPasswordClear").addEventListener("click",function(){if($("userCurrentPassword"))$("userCurrentPassword").value="";if($("userNewPassword"))$("userNewPassword").value="";if($("userConfirmPassword"))$("userConfirmPassword").value="";note("userPasswordNotice","")});
  document.querySelectorAll("[data-app]").forEach(function(b){b.addEventListener("click",function(){activateApp(b.dataset.app)})});document.querySelectorAll("[data-view]").forEach(function(b){b.addEventListener("click",function(){activateView(b.dataset.view)})});document.querySelectorAll("[data-go]").forEach(function(b){b.addEventListener("click",function(){activateView(b.dataset.go)})});
  $("checkAll").addEventListener("click",function(){checkAll($("checkAll"))});$("fetchModels").addEventListener("click",function(){getModels($("fetchModels"))});$("modelPicker").addEventListener("change",function(){if(!$("modelCustomWrap").hidden)return;$("modelName").value=this.value;configDirty=true;$("modelHint").textContent=this.value?"当前选择："+this.value:"请先获取可用模型"});$("modelManualToggle").addEventListener("click",function(){var manual=$("modelCustomWrap").hidden;if(manual){$("modelName").value=$("modelPicker").value||$("modelName").value||settings().model||"";$("modelCustomWrap").hidden=false;$("modelPicker").disabled=true;this.textContent="从列表选择";$("modelName").focus();configDirty=true}else{var value=$("modelName").value.trim();configDirty=true;renderModelPicker(current().models||[],value);$("modelCustomWrap").hidden=true;$("modelPicker").disabled=false;this.textContent="手动输入模型 ID";$("modelHint").textContent="当前选择："+$("modelPicker").value}});$("modelName").addEventListener("input",function(){configDirty=true;$("modelHint").textContent=this.value?"自定义模型："+this.value:"请输入模型 ID"});$("saveSettings").addEventListener("click",function(){saveConfig($("saveSettings"))});$("testChat").addEventListener("click",function(){testChat($("testChat"))});$("revealKey").addEventListener("click",function(){revealKey($("revealKey"))});$("balanceBtn").addEventListener("click",function(){balanceCheck($("balanceBtn"))});
  $("promptChoice").addEventListener("change",function(){$("promptText").value=promptValue($("promptChoice").value);$("promptCounter").textContent=Array.from($("promptText").value).length+" 字"});$("promptText").addEventListener("input",function(){$("promptCounter").textContent=Array.from(this.value).length+" 字"});$("savePrompt").addEventListener("click",function(){savePrompt($("savePrompt"))});$("revertPrompt").addEventListener("click",revertPrompt);
@@ -424,9 +420,9 @@ document.addEventListener("DOMContentLoaded",function(){
  document.addEventListener("change",function(e){var t=e.target.closest("[data-cloud-select]");if(!t)return;if(t.checked)cloudState.selected.add(t.dataset.cloudSelect);else cloudState.selected.delete(t.dataset.cloudSelect);cloudUpdateSelected();$("cloudSelectAll").checked=cloudState.rows.length>0&&cloudState.rows.every(function(row){return cloudState.selected.has(row.id)})});
  var logged=APPS.filter(function(a){return !!tokens[a.id]});
  if(tokens.user){
-  clearAdminSession();$("mainHeader").hidden=true;$("login").hidden=true;$("app").hidden=true;$("userPortal").hidden=false;
-  userRequest("/api/account/me").then(function(data){renderUserProfile(data.user);enterUserPortal(data.user)}).catch(function(error){clearUserSession();$("userPortal").hidden=true;$("login").hidden=false;setLoginMode("user");note("userLoginNotice",error.message||"登录已过期，请重新登录。","warn")});
- }else if(logged.length===2&&tokens.cloud){$("login").hidden=true;$("userPortal").hidden=true;$("app").hidden=false;headerState();Promise.all(APPS.map(function(a){return loadScope(a.id)})).then(function(){activateApp(logged[0].id);var initialView=new URLSearchParams(location.search).get("view")==="cloud"?"cloud":"overview";activateView(initialView)})}
+  clearAdminSession();$("mainHeader").hidden=true;$("login").hidden=true;$("app").hidden=true;if($("userPortal"))$("userPortal").hidden=false;
+  userRequest("/api/account/me").then(function(data){renderUserProfile(data.user);enterUserPortal(data.user)}).catch(function(error){clearUserSession();if($("userPortal"))$("userPortal").hidden=true;$("login").hidden=false;setLoginMode("user");note("userLoginNotice",error.message||"登录已过期，请重新登录。","warn")});
+ }else if(logged.length===2&&tokens.cloud){$("login").hidden=true;if($("userPortal"))$("userPortal").hidden=true;$("app").hidden=false;headerState();Promise.all(APPS.map(function(a){return loadScope(a.id)})).then(function(){activateApp(logged[0].id);var initialView=new URLSearchParams(location.search).get("view")==="cloud"?"cloud":"overview";activateView(initialView)})}
  else{if(logged.length||tokens.cloud){clearAdminSession();note("loginNotice","管理权限已更新，请重新登录。","info")}$("mainHeader").hidden=false;setLoginMode("admin");headerState()}
 });
 })();

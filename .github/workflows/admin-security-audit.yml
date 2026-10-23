@@ -5,6 +5,8 @@ on:
     branches: ["main"]
     paths:
       - "ai-admin.html"
+      - "assets/account-auth.js"
+      - "account-documents.html"
       - "assets/admin-console.js"
       - "cloud-admin.html"
       - "cloud-admin.js"
@@ -12,6 +14,8 @@ on:
   pull_request:
     paths:
       - "ai-admin.html"
+      - "assets/account-auth.js"
+      - "account-documents.html"
       - "assets/admin-console.js"
       - "cloud-admin.html"
       - "cloud-admin.js"
@@ -42,6 +46,7 @@ jobs:
           import assert from "node:assert/strict";
           const html = readFileSync("ai-admin.html", "utf8");
           const js = readFileSync("assets/admin-console.js", "utf8");
+          const account = readFileSync("assets/account-auth.js", "utf8");
           const policy = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/i)?.[1] || "";
           const scriptSrc = policy.split(";").map(part => part.trim()).find(part => part.startsWith("script-src "));
           assert.match(scriptSrc || "", /script-src 'self'/);
@@ -77,17 +82,17 @@ jobs:
           assert.doesNotMatch(js, /localStorage\.setItem\([^)]*(?:token|TOKEN_KEY)/i);
           assert.match(readFileSync("cloud-admin.html", "utf8"), /ai-admin\.html\?view=cloud/);
           assert.match(readFileSync("cloud-admin.js", "utf8"), /location\.replace\("\/ai-admin\.html\?view=cloud"\)/);
-          assert.match(html, /id="userLoginForm"/, "End users must have a separate login form.");
-          assert.match(html, /id="userPortal"/, "End users must land in a self-service-only portal.");
-          assert.match(html, /id="userPasswordForm"/, "End users must have a password-management form.");
+          assert.doesNotMatch(html, /id="userLoginForm"|id="userPortal"|id="userPasswordForm"|data-login-mode="user"/, "Legacy end-user panels must be removed from admin page.");
+          assert.match(html, /id="adminLoginPanel"/, "Admin page must retain separate administrator login.");
+          assert.match(html, /account-auth\.js\?v=20261023-account-auth-3/, "Unified account modal must load in admin page.");
+          assert.match(account, /\/api\/account\/login/, "Shared modal must use account login API.");
+          assert.match(account, /\/api\/account\/password/, "Password changes must use protected Worker API.");
+          assert.match(account, /zx-account-password-form/, "Password management must be in the shared modal.");
+          assert.match(account, /zx-account-consent/, "Shared modal must include consent.");
+          assert.match(account, /credentials:"include"/, "Shared account requests must include session cookies.");
+          assert.match(account, /account-documents\.html/, "Consent must link to separate legal docs.");
           assert.match(html, /\[hidden\]\{display:none!important\}/, "Hidden panels must remain hidden despite display rules.");
-          assert.match(html, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "Mobile nav should use a wrapping grid, not a horizontal scroller.");
-          assert.match(js, /async function userLogin/, "User login handler must exist.");
-          assert.match(js, /\/api\/account\/password/, "Password changes must go through the Worker.");
-          assert.match(js, /sessionStorage\.setItem\("zx-ai-user-refresh-token"/, "User refresh tokens should be session-scoped.");
-          assert.match(js, /app==="user"&&path==="\/api\/account\/password"/, "Wrong-current-password errors must not be mistaken for expired sessions.");
-          assert.match(js, /userProfileIp/, "The self-service page must show only the current account's registration IP.");
-          console.log("Unified admin, end-user isolation, login session handling, responsive navigation, and secret isolation passed.");
+          assert.match(html, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "Mobile nav should wrap into a grid.");
           NODE
       - name: Verify CSP and secret-handling invariants
         run: |
