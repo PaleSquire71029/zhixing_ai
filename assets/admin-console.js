@@ -14,7 +14,7 @@ function toast(msg){var e=$("toast");e.textContent=msg;e.classList.add("show");c
 function busy(e,on,label){if(!e)return;if(on){e.dataset.oldText=e.textContent;e.disabled=true;if(label)e.textContent=label}else{e.disabled=false;if(e.dataset.oldText){e.textContent=e.dataset.oldText;delete e.dataset.oldText}}}
 function appName(id){var app=APPS.find(function(a){return a.id===id});return app?app.name:id}
 function endpoint(path,app){if((app==="cloud"&&path.indexOf("/admin/cloud/")===0)||(app==="user"&&path.indexOf("/api/account/")===0))return WORKER+path;return WORKER+path+(path.indexOf("?")>=0?"&":"?")+"app="+encodeURIComponent(app)}
-async function api(app,path,opt){opt=opt||{};var headers=new Headers(opt.headers||{}),init={method:opt.method||"GET",headers:headers,cache:"no-store"};if(opt.body!==undefined){headers.set("Content-Type","application/json");init.body=JSON.stringify(opt.body)}if(!opt.noAuth&&tokens[app])headers.set("Authorization","Bearer "+tokens[app]);var ctrl=new AbortController(),tm=setTimeout(function(){ctrl.abort()},opt.timeout||18000);init.signal=ctrl.signal;var res,data={};try{res=await fetch(endpoint(path,app),init);var txt=await res.text();try{data=txt?JSON.parse(txt):{}}catch(e){data={error:"Worker 返回无法解析的响应"}}}catch(e){throw new Error(e.name==="AbortError"?"请求超时，请检查 Worker、网络或服务商状态。":"无法连接 Worker："+(e.message||"网络错误"))}finally{clearTimeout(tm)}if(res.status===401&&!opt.noAuth&&!(app==="user"&&path==="/api/account/password")){setToken(app,"");headerState();throw new Error("「"+appName(app)+"」会话已失效，请重新登录。")}if(!res.ok)throw new Error(data.error||("请求失败（HTTP "+res.status+"）"));return data}
+async function api(app,path,opt){opt=opt||{};var headers=new Headers(opt.headers||{}),init={method:opt.method||"GET",headers:headers,cache:"no-store",credentials:"include"};if(opt.body!==undefined){headers.set("Content-Type","application/json");init.body=JSON.stringify(opt.body)}if(!opt.noAuth&&tokens[app])headers.set("Authorization","Bearer "+tokens[app]);var ctrl=new AbortController(),tm=setTimeout(function(){ctrl.abort()},opt.timeout||18000);init.signal=ctrl.signal;var res,data={};try{res=await fetch(endpoint(path,app),init);var txt=await res.text();try{data=txt?JSON.parse(txt):{}}catch(e){data={error:"Worker 返回无法解析的响应"}}}catch(e){throw new Error(e.name==="AbortError"?"请求超时，请检查 Worker、网络或服务商状态。":"无法连接 Worker："+(e.message||"网络错误"))}finally{clearTimeout(tm)}if(res.status===401&&!opt.noAuth&&!(app==="user"&&path==="/api/account/password")){setToken(app,"");headerState();throw new Error("「"+appName(app)+"」会话已失效，请重新登录。")}if(!res.ok)throw new Error(data.error||("请求失败（HTTP "+res.status+"）"));return data}
 async function health(app){try{return {ok:true,data:await api(app,"/health",{noAuth:true,timeout:10000})}}catch(e){return {ok:false,error:e.message}}}
 function headerState(){var n=APPS.filter(function(a){return !!tokens[a.id]}).length,e=$("headerState");e.textContent=n===2&&tokens.cloud?"全部模块已登录":n===2?"请重新登录":"未登录";e.className="status-chip "+(n===2&&tokens.cloud?"good":n?"warn":"");$("logoutTop").hidden=!n&&!tokens.cloud}
 function clearUserSession(){setToken("user","");userRefreshToken="";userExpiry=0;userProfile=null;try{sessionStorage.removeItem("zx-ai-user-refresh-token");sessionStorage.removeItem("zx-ai-user-expiry")}catch(e){}}
@@ -45,7 +45,7 @@ function activateView(view){activeView=view;document.querySelectorAll("[data-vie
 function setLoginMode(mode){
  document.querySelectorAll("[data-login-mode]").forEach(function(b){b.classList.toggle("active",b.dataset.loginMode===mode)});
  $("adminLoginPanel").hidden=mode!=="admin";$("userLoginPanel").hidden=mode!=="user";
- if(mode==="admin")$("password").focus();else $("userLoginEmail").focus();
+ if(mode==="admin")$("password").focus();else $("userLoginIdentifier").focus();
 }
 function userSaveSession(data){
  setToken("user",data.accessToken||"");userRefreshToken=String(data.refreshToken||"");
@@ -87,7 +87,7 @@ function userRequest(path,opt){
 async function userLogin(ev){
  ev.preventDefault();var btn=$("userLoginButton");busy(btn,true,"正在登录…");note("userLoginNotice","");
  try{
-  var data=await api("user","/api/account/login",{method:"POST",noAuth:true,timeout:15000,body:{email:$("userLoginEmail").value.trim(),password:$("userLoginPassword").value}});
+  if(!$("userLoginConsent").checked)throw new Error("请先阅读并同意账号协议与隐私声明。");var data=await api("user","/api/account/login",{method:"POST",noAuth:true,timeout:15000,body:{identifier:$("userLoginIdentifier").value.trim(),password:$("userLoginPassword").value}});
   if(!data.accessToken||!data.refreshToken||!data.user||!data.user.id)throw new Error("登录服务未返回完整会话。");
   clearAdminSession();userSaveSession(data);$("userLoginPassword").value="";
   enterUserPortal(data.user);
@@ -227,17 +227,25 @@ async function cloudDeleteAccount(account){
   await Promise.all([loadCloudAccounts(),loadCloudUsers(),loadCloudOverview(),loadCloudAudit()]);
  }catch(e){note("cloudCreateAccountNotice",e.message||"账号注销失败。","bad")}
 }
+async function cloudSetUsername(account){
+ if(!account||!account.id)return;
+ var desired=window.prompt("设置唯一用户名（3–24 位，字母开头，可含数字、下划线和连字符）。留空可清除。",account.username||"");
+ if(desired===null)return;desired=desired.trim();
+ if(desired&&!/^[A-Za-z][A-Za-z0-9_-]{2,23}$/.test(desired)){note("cloudCreateAccountNotice","用户名须为 3–24 位，以英文字母开头，只能包含字母、数字、下划线或连字符。","bad");return}
+ try{var data=await cloudApi("/admin/cloud/accounts/username",{method:"POST",body:{user_id:account.id,username:desired}});toast(data.username?"用户名已保存。":"已清除用户名。");await loadCloudAccounts()}
+ catch(e){note("cloudCreateAccountNotice",e.message||"用户名设置失败。","bad")}
+}
 async function loadCloudAccounts(){
  $("cloudAccountList").innerHTML='<div class="empty-state">正在加载账号目录…</div>';
  try{var params=new URLSearchParams({page:String(cloudState.accountPage),per_page:"20"}),data=await cloudApi("/admin/cloud/accounts?"+params.toString());cloudState.accounts=data.users||[];cloudState.accountHasMore=!!data.hasMore;cloudRenderAccounts();$("cloudAccountPageInfo").textContent="第 "+cloudState.accountPage+" 页";$("cloudAccountPageLabel").textContent="第 "+cloudState.accountPage+" 页";$("cloudAccountPrev").disabled=cloudState.accountPage<=1;$("cloudAccountNext").disabled=!cloudState.accountHasMore}
  catch(e){$("cloudAccountList").innerHTML='<div class="empty-state">'+cloudEsc(e.message)+'</div>';note("cloudCreateAccountNotice",e.message,"bad")}
 }
 function cloudRenderAccounts(){
- var q=$("cloudAccountSearch").value.trim().toLowerCase(),rows=cloudState.accounts.filter(function(user){return !q||String(user.email||"").toLowerCase().includes(q)});
+ var q=$("cloudAccountSearch").value.trim().toLowerCase(),rows=cloudState.accounts.filter(function(user){return !q||String(user.email||"").toLowerCase().includes(q)||String(user.username||"").toLowerCase().includes(q)});
  if(!rows.length){$("cloudAccountList").innerHTML='<div class="empty-state">'+(q?"当前页没有匹配邮箱。":"暂无账号，或该页没有记录。")+'</div>';return}
  $("cloudAccountList").innerHTML=rows.map(function(user){
   var confirmed=!!user.email_confirmed_at,reg=user.registration||{},loc=[reg.city,reg.region,cloudCountry(reg.countryCode||reg.country)].filter(Boolean).join(" · ")||"未知归属地";
-  return '<article class="cloud-account-card"><div class="cloud-account-top"><div class="cloud-account-email">'+cloudEsc(user.email||"无邮箱")+'</div><span class="cloud-account-state '+(confirmed?"":"pending")+'">'+(confirmed?"邮箱已确认":"未确认")+'</span></div><div class="cloud-account-meta">用户 ID：<span class="cloud-userid">'+cloudEsc(user.id)+'</span><br>创建时间：'+cloudEsc(cloudTime(user.created_at))+'<br>最近登录：'+cloudEsc(cloudTime(user.last_sign_in_at))+'<br>注册 IP：'+cloudEsc(reg.ip||"未记录")+'<br>IP 归属地：'+cloudEsc(loc)+'<br>记录来源：'+cloudEsc(reg.source==="admin-created"?"管理员创建":reg.source||"未记录")+'</div><div class="actions cloud-account-actions" style="margin-top:10px"><button class="btn small" type="button" data-cloud-account-chats="'+cloudEsc(user.id)+'">查看云端对话</button><button class="btn small danger" type="button" data-cloud-account-delete="'+cloudEsc(user.id)+'">注销账号</button></div></article>';
+  return '<article class="cloud-account-card"><div class="cloud-account-top"><div class="cloud-account-email">'+cloudEsc(user.username?user.username+" · "+(user.email||"无邮箱"):(user.email||"无邮箱"))+'</div><span class="cloud-account-state '+(confirmed?"":"pending")+'">'+(confirmed?"邮箱已确认":"未确认")+'</span></div><div class="cloud-account-meta">用户名：'+cloudEsc(user.username||"未设置")+'<br>用户 ID：<span class="cloud-userid">'+cloudEsc(user.id)+'</span><br>创建时间：'+cloudEsc(cloudTime(user.created_at))+'<br>最近登录：'+cloudEsc(cloudTime(user.last_sign_in_at))+'<br>注册 IP：'+cloudEsc(reg.ip||"未记录")+'<br>IP 归属地：'+cloudEsc(loc)+'<br>记录来源：'+cloudEsc(reg.source==="admin-created"?"管理员创建":reg.source||"未记录")+'</div><div class="actions cloud-account-actions" style="margin-top:10px"><button class="btn small" type="button" data-cloud-account-username="'+cloudEsc(user.id)+'">设置用户名</button><button class="btn small" type="button" data-cloud-account-chats="'+cloudEsc(user.id)+'">查看云端对话</button><button class="btn small danger" type="button" data-cloud-account-delete="'+cloudEsc(user.id)+'">注销账号</button></div></article>';
  }).join("")
 }
 async function cloudCreateAccount(ev){
@@ -392,14 +400,14 @@ document.addEventListener("DOMContentLoaded",function(){
  $("cloudMoreMessages").addEventListener("click",function(){cloudLoadMessages(false)});
  $("cloudDeleteCurrent").addEventListener("click",function(){if(cloudState.activeRow)cloudDelete([cloudState.activeRow.id],cloudState.activeRow.app_id)});
  document.addEventListener("click",function(e){
-  var t=e.target.closest("[data-cloud-open-app],[data-cloud-open],[data-cloud-delete],[data-cloud-open-user],[data-cloud-delete-user],[data-cloud-account-chats],[data-cloud-account-delete]");
+  var t=e.target.closest("[data-cloud-open-app],[data-cloud-open],[data-cloud-delete],[data-cloud-open-user],[data-cloud-delete-user],[data-cloud-account-chats],[data-cloud-account-delete],[data-cloud-account-username]");
   if(!t)return;
   if(t.dataset.cloudOpenApp){$("cloudConversationApp").value=t.dataset.cloudOpenApp;cloudState.page=1;delete $("cloudConversationSearch").dataset.userId;cloudTab("conversations");loadCloudConversations();return}
   if(t.dataset.cloudOpen){cloudOpenConversation(t.dataset.cloudOpen);return}
   if(t.dataset.cloudDelete){var row=cloudState.rows.find(function(x){return x.id===t.dataset.cloudDelete});if(row)cloudDelete([row.id],row.app_id);return}
   if(t.dataset.cloudOpenUser){cloudFilterUser(t.dataset.cloudOpenUser,t.dataset.cloudUserApp||"zhixing-ai");return}
   if(t.dataset.cloudDeleteUser){cloudDeleteUser(t.dataset.cloudDeleteUser);return}
-  if(t.dataset.cloudAccountChats){cloudFilterUser(t.dataset.cloudAccountChats,"all");return}
+  if(t.dataset.cloudAccountUsername){var accountForUsername=cloudState.accounts.find(function(u){return u.id===t.dataset.cloudAccountUsername});if(accountForUsername)cloudSetUsername(accountForUsername);return}if(t.dataset.cloudAccountChats){cloudFilterUser(t.dataset.cloudAccountChats,"all");return}
   if(t.dataset.cloudAccountDelete){var account=cloudState.accounts.find(function(u){return u.id===t.dataset.cloudAccountDelete});if(account)cloudDeleteAccount(account);return}
  });
  document.addEventListener("change",function(e){var t=e.target.closest("[data-cloud-select]");if(!t)return;if(t.checked)cloudState.selected.add(t.dataset.cloudSelect);else cloudState.selected.delete(t.dataset.cloudSelect);cloudUpdateSelected();$("cloudSelectAll").checked=cloudState.rows.length>0&&cloudState.rows.every(function(row){return cloudState.selected.has(row.id)})});

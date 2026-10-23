@@ -113,9 +113,9 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 <div id="adminLoginPanel"><form id="loginForm" class="stack"><div class="field"><label for="password">管理密码</label><input id="password" type="password" autocomplete="current-password" required placeholder="输入 Worker 管理密码"></div><button class="btn primary full" id="loginBtn" type="submit">安全登录</button></form><div class="notice" id="loginNotice" role="status" aria-live="polite"></div><p class="hint" style="margin-top:12px">管理员可管理配置、云端数据与账号。</p></div>
 <div id="userLoginPanel" hidden>
 <form id="userLoginForm" class="stack">
-<div class="field"><label for="userLoginEmail">邮箱</label><input id="userLoginEmail" type="email" maxlength="254" autocomplete="username" required placeholder="你的登录邮箱"></div>
+<div class="field"><label for="userLoginEmail">邮箱</label><input id="userLoginIdentifier" type="text" maxlength="254" autocomplete="username" required placeholder="用户名或邮箱"></div>
 <div class="field"><label for="userLoginPassword">密码</label><input id="userLoginPassword" type="password" maxlength="128" autocomplete="current-password" required placeholder="账号密码"></div>
-<button class="btn primary full" id="userLoginButton" type="submit">登录我的账号</button>
+<label style="display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.65;color:var(--muted)"><input id="userLoginConsent" type="checkbox" required style="margin-top:4px;flex:0 0 auto"><span>我已阅读并同意<a href="https://ai.zhixing.us.ci/account-documents.html#agreement" target="_blank" rel="noopener">《账号使用协议》</a>与<a href="https://ai.zhixing.us.ci/account-documents.html#privacy" target="_blank" rel="noopener">《隐私声明》</a>。</span></label><button class="btn primary full" id="userLoginButton" type="submit">登录我的账号</button>
 </form>
 <div class="notice" id="userLoginNotice" role="status" aria-live="polite"></div>
 <p class="hint" style="margin-top:12px">普通用户只能查看本人账号资料、注册来源与修改本人密码。</p>
@@ -229,4 +229,4 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
   </section>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="/assets/admin-console.js?v=20261022-provider-balance-fix-4" defer></script></body></html>
+<script src="/assets/admin-console.js?v=20261023-account-username-fix-1" defer></script></body></html>
