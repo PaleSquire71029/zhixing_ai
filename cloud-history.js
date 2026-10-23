@@ -5,7 +5,7 @@ const SUPABASE_KEY = 'sb_publishable_jJDVBqrGIjg87Iwn5bXwxQ_Z4JfI3aj';
 const WORKER = 'https://api.zhixing.us.ci';
 const APP = 'zhixing-ai';
 const $ = id => document.getElementById(id);
-const client = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const client = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } }) : null;
 const uuid = () => crypto.randomUUID();
 const cloudItems = new Map();
 function status(message) { const el = $('cloudAccountStatus'); if (el) el.textContent = message; }
