@@ -91,6 +91,11 @@ jobs:
           assert.match(account, /zx-account-consent/, "Shared modal must include consent.");
           assert.match(account, /credentials:"include"/, "Shared account requests must include session cookies.");
           assert.match(account, /account-documents\.html/, "Consent must link to separate legal docs.");
+          assert.match(html, /data-zx-open-account/, "Admin login page must offer the shared user-login modal.");
+          assert.match(html, /account-documents\.html#agreement/, "Admin login page must link the account agreement.");
+          assert.match(html, /account-documents\.html#privacy/, "Admin login page must link the privacy notice.");
+          assert.match(html, /id="accountsQuickNav"/, "The unified console must expose account management directly.");
+          assert.match(js, /cloudTab\("accounts"\)/, "Direct account management navigation must open the account panel.");
           assert.match(html, /\[hidden\]\{display:none!important\}/, "Hidden panels must remain hidden despite display rules.");
           assert.match(html, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/, "Mobile nav should wrap into a grid.");
           NODE
