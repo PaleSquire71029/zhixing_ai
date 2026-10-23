@@ -111,7 +111,15 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
 <header class="header" id="mainHeader"><div class="logo" aria-hidden="true">知</div><div class="brand"><div class="brand-topline"><strong>知行AI · 管理中心</strong><button class="btn small cloud-shortcut" data-go="cloud" type="button">云端数据</button></div><span>模型 · 提示词 · 账号</span></div><div class="header-right"><span class="status-chip" id="headerState">未登录</span><button class="btn small" id="logoutTop" hidden type="button">退出</button></div></header>
 <section class="surface login" id="login"><div class="loginmark" aria-hidden="true">⌑</div><div class="kicker">ADMIN CONSOLE</div><h1 class="heading">统一管理全部知行产品</h1><p class="muted">使用管理密码进入统一控制台。知行AI、学习版与计算器AI版的模型配置、账号和云端数据都在这里管理。</p>
 <div id="adminLoginPanel"><form id="loginForm" class="stack"><div class="field"><label for="password">管理密码</label><input id="password" type="password" autocomplete="current-password" required placeholder="输入 Worker 管理密码"></div><button class="btn primary full" id="loginBtn" type="submit">安全登录</button></form><div class="notice" id="loginNotice" role="status" aria-live="polite"></div><p class="hint" style="margin-top:12px">管理员可管理配置、云端数据与账号。</p></div>
-</section>
+<div id="userLoginPanel" hidden>
+<form id="userLoginForm" class="stack">
+<div class="field"><label for="userLoginEmail">邮箱</label><input id="userLoginIdentifier" type="text" maxlength="254" autocomplete="username" required placeholder="用户名或邮箱"></div>
+<div class="field"><label for="userLoginPassword">密码</label><input id="userLoginPassword" type="password" maxlength="128" autocomplete="current-password" required placeholder="账号密码"></div>
+<label style="display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.65;color:var(--muted)"><input id="userLoginConsent" type="checkbox" required style="margin-top:4px;flex:0 0 auto"><span>我已阅读并同意<a href="https://ai.zhixing.us.ci/account-documents.html#agreement" target="_blank" rel="noopener">《账号使用协议》</a>与<a href="https://ai.zhixing.us.ci/account-documents.html#privacy" target="_blank" rel="noopener">《隐私声明》</a>。</span></label><button class="btn primary full" id="userLoginButton" type="submit">登录我的账号</button>
+</form>
+<div class="notice" id="userLoginNotice" role="status" aria-live="polite"></div>
+<p class="hint" style="margin-top:12px">普通用户只能查看本人账号资料、注册来源与修改本人密码。</p>
+</div></section>
 <main id="app" hidden><div class="apphead"><div><div class="kicker">CONTROL ROOM</div><h1 class="heading">产品管理</h1><p class="muted">所有设置和统计均按产品分别保存。</p></div><div class="product-tabs" role="tablist" aria-label="切换产品"><button class="product-tab active" data-app="zhixing-ai" type="button">知行AI<small>AI 主站</small></button><button class="product-tab" data-app="learning" type="button">学习产品<small>学习版 + 计算器AI版</small></button></div></div>
 <div class="layout"><aside class="surface side" aria-label="管理导航"><button class="nav active" data-view="overview" type="button"><i>⌂</i>总览</button><button class="nav" data-view="config" type="button"><i>⚙</i>模型连接</button><button class="nav" data-view="prompts" type="button"><i>✎</i>提示词</button><button class="nav" data-view="records" type="button"><i>≋</i>请求记录</button><button class="nav" data-view="security" type="button"><i>◇</i>安全备份</button><button class="nav" data-view="cloud" type="button"><i>▦</i>云端数据</button><div class="sidefoot">Worker 后端存储<br>按产品独立保存</div></aside><div>
 <section class="surface panel active" data-panel="overview"><h2 class="ptitle">运行总览</h2><p class="plead">配置状态、上游连通性与请求用量。</p><div class="metrics"><div class="metric"><span>累计请求</span><strong id="mTotal">—</strong><small>当前产品</small></div><div class="metric"><span>失败请求</span><strong id="mFailed">—</strong><small id="mFailRate">等待统计</small></div><div class="metric"><span>累计 Token</span><strong id="mTokens">—</strong><small>服务商 usage</small></div><div class="metric"><span>请求明细</span><strong id="mRecords">—</strong><small>最多保留 500 条</small></div></div>
@@ -193,5 +201,32 @@ html,body{width:100%;max-width:100%;overflow-x:hidden}
   </div>
 </section>
 </div></div></main></div>
+<main id="userPortal" class="user-portal" hidden>
+  <header class="header user-header" id="userHeader"><div class="logo" aria-hidden="true">知</div><div class="brand"><strong>知行AI · 个人账号</strong><span>账号与安全</span></div><div class="header-right"><span class="status-chip good">已登录</span><button class="btn small" id="userLogout" type="button">退出</button></div></header>
+  <section class="surface user-welcome"><div class="kicker">MY ACCOUNT</div><h1 class="heading">账号与安全</h1><p class="muted">查看本人资料、登录来源并修改密码。</p></section>
+  <section class="surface user-card">
+    <div class="user-card-head"><div><h2 class="ptitle">账号资料</h2><p class="plead">只读账号信息</p></div><span class="status-chip good" id="userVerified">状态检查中</span></div>
+    <div class="user-data-grid">
+      <div class="user-data-item"><span>登录邮箱</span><strong id="userProfileEmail">—</strong></div>
+      <div class="user-data-item"><span>账号创建时间</span><strong id="userProfileCreated">—</strong></div>
+      <div class="user-data-item"><span>注册 IP</span><strong id="userProfileIp">未记录</strong></div>
+      <div class="user-data-item"><span>IP 归属地</span><strong id="userProfileLocation">未记录</strong></div>
+      <div class="user-data-item"><span>注册来源</span><strong id="userProfileSource">未记录</strong></div>
+      <div class="user-data-item user-wide"><span>用户 ID</span><strong id="userProfileId">—</strong></div>
+    </div>
+    <p class="hint">注册 IP 是管理员创建账号时的来源 IP。归属地由 Cloudflare 近似推断，VPN 或代理可能影响准确性。</p>
+    <div class="notice" id="userProfileNotice" role="status" aria-live="polite"></div>
+  </section>
+  <section class="surface user-card">
+    <h2 class="ptitle">修改密码</h2><p class="plead">修改前需要验证当前密码。</p>
+    <form id="userPasswordForm" class="grid2">
+      <div class="field span2"><label for="userCurrentPassword">当前密码</label><input id="userCurrentPassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" required></div>
+      <div class="field"><label for="userNewPassword">新密码</label><input id="userNewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></div>
+      <div class="field"><label for="userConfirmPassword">确认新密码</label><input id="userConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></div>
+      <div class="span2 actions"><button class="btn primary" id="userPasswordButton" type="submit">更新密码</button><button class="btn" id="userPasswordClear" type="button">清空</button></div>
+    </form>
+    <div class="notice" id="userPasswordNotice" role="status" aria-live="polite"></div>
+  </section>
+</main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="/assets/admin-console.js?v=20261023-account-username-fix-1" defer></script></body></html>
+<script src="/assets/admin-console.js?v=20261023-account-username-fix-1" defer></script><script src="/assets/account-auth.js?v=20261023-account-auth-3" defer></script></body></html>

@@ -4,7 +4,7 @@ if(window.top!==window.self){try{window.top.location=window.location.href}catch(
 var $=function(id){return document.getElementById(id)},WORKER="https://api.zhixing.us.ci",TOKEN_KEY="zx-ai-admin-token-";
 var APPS=[{id:"zhixing-ai",name:"知行AI"},{id:"learning",name:"学习产品"}],cache={"zhixing-ai":null,"learning":null},tokens={"zhixing-ai":"","learning":"","cloud":"","user":""},activeApp="zhixing-ai",activeView="overview",page=1,pageSize=25,expanded={},toastTimer=0,configDirty=false,providerChanged=false;
 var userRefreshToken="",userExpiry=0,userProfile=null;
-try{tokens.user=sessionStorage.getItem(TOKEN_KEY+"user")||"";userRefreshToken=sessionStorage.getItem("zx-ai-user-refresh-token")||"";userExpiry=Number(sessionStorage.getItem("zx-ai-user-expiry")||0)}catch(e){}
+try{tokens.user="";sessionStorage.removeItem(TOKEN_KEY+"user");sessionStorage.removeItem("zx-ai-user-refresh-token");sessionStorage.removeItem("zx-ai-user-expiry")}catch(e){}
 var cloudState={overview:null,tab:"overview",page:1,pageSize:20,total:null,app:"zhixing-ai",rows:[],selected:new Set(),users:[],accounts:[],accountPage:1,accountHasMore:false,audit:[],activeRow:null,messageOffset:0,messageTotal:null};
 APPS.forEach(function(app){try{tokens[app.id]=sessionStorage.getItem(TOKEN_KEY+app.id)||""}catch(e){}});
 try{tokens.cloud=sessionStorage.getItem(TOKEN_KEY+"cloud")||""}catch(e){}
