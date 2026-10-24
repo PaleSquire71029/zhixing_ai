@@ -77,6 +77,9 @@ jobs:
           assert.match(js, /DELETE_ACCOUNT/, "Account deletion must use an explicit confirmation.");
           assert.match(html, /<option value="all">全部产品<\/option>/, "Conversation filter must support both products.");
           assert.match(js, /result\.tokens\.cloud/, "Unified login must receive its scoped cloud token.");
+          assert.match(js, /result\.tokens\["calculator-ai"\]/, "Unified login must receive the calculator AI scope token.");
+          assert.match(js, /logged.length===3/, "Restored admin sessions must include all three product scopes.");
+          assert.match(html, /data-app="calculator-ai"/, "The admin workspace must include a separate calculator AI tab.");
           assert.match(js, /\/admin\/cloud\/accounts/, "Account operations must use the protected Worker endpoint.");
           assert.match(js, /emailOwnershipConfirmed/, "Account creation must require mailbox ownership confirmation.");
           assert.match(js, /body\.textContent=m\.content/, "Stored chat content must be rendered as text, not HTML.");
@@ -87,7 +90,7 @@ jobs:
           assert.match(readFileSync("cloud-admin.js", "utf8"), /location\.replace\("\/ai-admin\.html\?view=cloud"\)/);
           assert.doesNotMatch(html, /id="userLoginForm"|id="userPortal"|id="userPasswordForm"|data-login-mode="user"/, "Legacy end-user panels must be removed from admin page.");
           assert.match(html, /id="adminLoginPanel"/, "Admin page must retain separate administrator login.");
-          assert.match(html, /account-auth\.js\?v=20261023-account-auth-6/, "Unified account modal must load in admin page.");
+          assert.match(html, /account-auth\.js\?v=20261024-account-auth-7/, "Unified account modal must load in admin page.");
           assert.match(account, /\/api\/account\/login/, "Shared modal must use account login API.");
           assert.match(account, /\/api\/account\/password/, "Password changes must use protected Worker API.");
           assert.match(account, /syncCloudAuth/, "Shared login must synchronize the Supabase history session.");

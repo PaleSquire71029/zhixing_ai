@@ -2,7 +2,7 @@
 "use strict";
 if(window.top!==window.self){try{window.top.location=window.location.href}catch(e){document.documentElement.textContent="";return}}
 var $=function(id){return document.getElementById(id)},WORKER="https://api.zhixing.us.ci",TOKEN_KEY="zx-ai-admin-token-";
-var APPS=[{id:"zhixing-ai",name:"知行AI"},{id:"learning",name:"学习产品"}],cache={"zhixing-ai":null,"learning":null},tokens={"zhixing-ai":"","learning":"","cloud":""},activeApp="zhixing-ai",activeView="overview",page=1,pageSize=25,expanded={},toastTimer=0,configDirty=false,providerChanged=false;
+var APPS=[{id:"zhixing-ai",name:"知行AI"},{id:"learning",name:"知行AI学习版"},{id:"calculator-ai",name:"知行计算器AI版"}],cache={"zhixing-ai":null,"learning":null,"calculator-ai":null},tokens={"zhixing-ai":"","learning":"","calculator-ai":"","cloud":""},activeApp="zhixing-ai",activeView="overview",page=1,pageSize=25,expanded={},toastTimer=0,configDirty=false,providerChanged=false;
 var cloudState={overview:null,tab:"overview",page:1,pageSize:20,total:null,app:"zhixing-ai",rows:[],selected:new Set(),users:[],accounts:[],accountPage:1,accountHasMore:false,audit:[],activeRow:null,messageOffset:0,messageTotal:null};
 APPS.forEach(function(app){try{tokens[app.id]=sessionStorage.getItem(TOKEN_KEY+app.id)||""}catch(e){}});
 try{tokens.cloud=sessionStorage.getItem(TOKEN_KEY+"cloud")||""}catch(e){}
@@ -14,14 +14,14 @@ function appName(id){var app=APPS.find(function(a){return a.id===id});return app
 function endpoint(path,app){if(app==="cloud"&&path.indexOf("/admin/cloud/")===0)return WORKER+path;return WORKER+path+(path.indexOf("?")>=0?"&":"?")+"app="+encodeURIComponent(app)}
 async function api(app,path,opt){opt=opt||{};var headers=new Headers(opt.headers||{}),init={method:opt.method||"GET",headers:headers,cache:"no-store",credentials:"include"};if(opt.body!==undefined){headers.set("Content-Type","application/json");init.body=JSON.stringify(opt.body)}if(!opt.noAuth&&tokens[app])headers.set("Authorization","Bearer "+tokens[app]);var ctrl=new AbortController(),tm=setTimeout(function(){ctrl.abort()},opt.timeout||18000);init.signal=ctrl.signal;var res,data={};try{res=await fetch(endpoint(path,app),init);var txt=await res.text();try{data=txt?JSON.parse(txt):{}}catch(e){data={error:"Worker 返回无法解析的响应"}}}catch(e){throw new Error(e.name==="AbortError"?"请求超时，请检查 Worker、网络或服务商状态。":"无法连接 Worker："+(e.message||"网络错误"))}finally{clearTimeout(tm)}if(res.status===401&&!opt.noAuth){setToken(app,"");headerState();throw new Error("「"+appName(app)+"」会话已失效，请重新登录。")}if(!res.ok)throw new Error(data.error||("请求失败（HTTP "+res.status+"）"));return data}
 async function health(app){try{return {ok:true,data:await api(app,"/health",{noAuth:true,timeout:10000})}}catch(e){return {ok:false,error:e.message}}}
-function headerState(){var n=APPS.filter(function(a){return !!tokens[a.id]}).length,e=$("headerState");e.textContent=n===2&&tokens.cloud?"全部模块已登录":n===2?"请重新登录":"未登录";e.className="status-chip "+(n===2&&tokens.cloud?"good":n?"warn":"");$("logoutTop").hidden=!n&&!tokens.cloud}
-function clearAdminSession(){APPS.forEach(function(a){setToken(a.id,"")});setToken("cloud","");cache={"zhixing-ai":null,"learning":null};cloudState={overview:null,tab:"overview",page:1,pageSize:20,total:null,app:"zhixing-ai",rows:[],selected:new Set(),users:[],accounts:[],accountPage:1,accountHasMore:false,audit:[],activeRow:null,messageOffset:0,messageTotal:null}}
-function logoutAll(){clearAdminSession();cache={"zhixing-ai":null,"learning":null};$("password").value="";$("mainHeader").hidden=false;$("app").hidden=true;$("login").hidden=false;note("loginNotice","已退出全部管理模块。","ok");headerState()}
+function headerState(){var n=APPS.filter(function(a){return !!tokens[a.id]}).length,e=$("headerState"),all=n===APPS.length&&!!tokens.cloud;e.textContent=all?"全部产品已登录":n?"管理会话不完整":"未登录";e.className="status-chip "+(all?"good":n?"warn":"");$("logoutTop").hidden=!n&&!tokens.cloud}
+function clearAdminSession(){APPS.forEach(function(a){setToken(a.id,"")});setToken("cloud","");cache={"zhixing-ai":null,"learning":null,"calculator-ai":null};cloudState={overview:null,tab:"overview",page:1,pageSize:20,total:null,app:"zhixing-ai",rows:[],selected:new Set(),users:[],accounts:[],accountPage:1,accountHasMore:false,audit:[],activeRow:null,messageOffset:0,messageTotal:null}}
+function logoutAll(){clearAdminSession();cache={"zhixing-ai":null,"learning":null,"calculator-ai":null};$("password").value="";$("mainHeader").hidden=false;$("app").hidden=true;$("login").hidden=false;note("loginNotice","已退出全部管理模块。","ok");headerState()}
 async function login(ev){
  ev.preventDefault();var password=$("password").value,btn=$("loginBtn");busy(btn,true,"正在验证…");note("loginNotice","");
  try{
   var result=await api("learning","/admin/login/all",{method:"POST",noAuth:true,timeout:12000,body:{password:password}});
-  if(!result.tokens||!result.tokens["zhixing-ai"]||!result.tokens.learning||!result.tokens.cloud)throw new Error("后端没有返回完整的统一管理会话，请确认 Worker 已部署最新版本。");
+  if(!result.tokens||!result.tokens["zhixing-ai"]||!result.tokens.learning||!result.tokens["calculator-ai"]||!result.tokens.cloud)throw new Error("后端没有返回完整的统一管理会话，请确认 Worker 已部署最新版本。");
   APPS.forEach(function(app){setToken(app.id,result.tokens[app.id])});setToken("cloud",result.tokens.cloud);
   $("mainHeader").hidden=false;$("password").value="";headerState();$("login").hidden=true;$("app").hidden=false;
   await Promise.all(APPS.map(function(app){return loadScope(app.id)}));
@@ -345,7 +345,7 @@ document.addEventListener("DOMContentLoaded",function(){
  });
  document.addEventListener("change",function(e){var t=e.target.closest("[data-cloud-select]");if(!t)return;if(t.checked)cloudState.selected.add(t.dataset.cloudSelect);else cloudState.selected.delete(t.dataset.cloudSelect);cloudUpdateSelected();$("cloudSelectAll").checked=cloudState.rows.length>0&&cloudState.rows.every(function(row){return cloudState.selected.has(row.id)})});
  var logged=APPS.filter(function(a){return !!tokens[a.id]});
- if(logged.length===2&&tokens.cloud){
+ if(logged.length===3&&tokens.cloud){
    $("login").hidden=true;$("app").hidden=false;headerState();
    Promise.all(APPS.map(function(a){return loadScope(a.id)})).then(function(){activateApp(logged[0].id);var initialView=new URLSearchParams(location.search).get("view")==="cloud"?"cloud":"overview";activateView(initialView)});
  } else {
